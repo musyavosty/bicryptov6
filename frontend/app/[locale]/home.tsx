@@ -85,6 +85,7 @@ import { AnimatedStats } from "./components/animated-stats";
 import { PressStrip } from "./components/press-strip";
 import { FAQSection } from "./components/faq-section";
 import { NewsletterCapture } from "./components/newsletter-capture";
+import { BlogPreview } from "./components/blog-preview";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -2181,6 +2182,7 @@ export default function DefaultHomePage() {
       </Section>
 
       {/* Testimonials */}
+      <BlogPreview />
       <TestimonialsSection />
 
       {/* Social Proof Toast — floating activity notifications */}
