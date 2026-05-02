@@ -187,7 +187,7 @@ const tradingTableQueries = [
 const tradingViewQueries = [
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaKeyspace}.open_orders AS
   SELECT * FROM ${exports.scyllaKeyspace}.orders
-  WHERE status = 'OPEN' AND "userId" IS NOT NULL AND "createdAt" IS NOT NULL AND id IS NOT NULL
+  WHERE status IS NOT NULL AND "userId" IS NOT NULL AND "createdAt" IS NOT NULL AND id IS NOT NULL
   PRIMARY KEY ((status, "userId"), "createdAt", id)
   WITH CLUSTERING ORDER BY ("createdAt" DESC, id ASC);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaKeyspace}.latest_candles AS
@@ -269,7 +269,7 @@ const futuresTableQueries = [
 const futuresViewQueries = [
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.open_order AS
   SELECT * FROM ${exports.scyllaFuturesKeyspace}.orders
-  WHERE status = 'OPEN' AND "userId" IS NOT NULL AND "createdAt" IS NOT NULL AND id IS NOT NULL
+  WHERE status IS NOT NULL AND "userId" IS NOT NULL AND "createdAt" IS NOT NULL AND id IS NOT NULL
   PRIMARY KEY ((status, "userId"), "createdAt", id)
   WITH CLUSTERING ORDER BY ("createdAt" DESC, id ASC);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.latest_candles AS
