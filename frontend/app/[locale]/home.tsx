@@ -165,22 +165,22 @@ function MeshBackground() {
       {/* Use CSS animations instead of framer-motion for background blobs */}
       <div
         className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 rounded-full opacity-30 blur-[120px] animate-blob-1"
-        style={{ background: "radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(245, 158, 11, 0.5) 0%, transparent 70%)" }}
       />
 
       <div
         className="absolute top-1/4 -right-1/4 w-1/2 h-1/2 rounded-full opacity-30 blur-[120px] animate-blob-2"
-        style={{ background: "radial-gradient(circle, rgba(139, 92, 246, 0.5) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(234, 88, 12, 0.5) 0%, transparent 70%)" }}
       />
 
       <div
         className="absolute top-1/2 left-1/3 w-1/3 h-1/3 rounded-full opacity-25 blur-[100px] animate-blob-3"
-        style={{ background: "radial-gradient(circle, rgba(6, 182, 212, 0.5) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(16, 185, 129, 0.5) 0%, transparent 70%)" }}
       />
 
       <div
         className="absolute bottom-1/4 left-1/4 w-1/3 h-1/3 rounded-full opacity-20 blur-[100px] animate-blob-4"
-        style={{ background: "radial-gradient(circle, rgba(236, 72, 153, 0.4) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(217, 119, 6, 0.4) 0%, transparent 70%)" }}
       />
 
       <div
@@ -1778,7 +1778,7 @@ export default function DefaultHomePage() {
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-screen flex items-center pt-20" style={{ position: 'relative' }}>
         {/* Hero floating shapes */}
-        <FloatingShapes theme={{ primary: "blue", secondary: "purple" }} count={3} />
+        <FloatingShapes theme={{ primary: "amber", secondary: "orange" }} count={3} />
 
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
@@ -1795,9 +1795,9 @@ export default function DefaultHomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 text-blue-400 mb-8">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-400 mb-8">
                   <Sparkles className="w-4 h-4" />
-                  {getContent(pageContent, "hero.badge", "#1 Crypto Trading Platform")}
+                  {getContent(pageContent, "hero.badge", "Africa's Premier Digital Exchange")}
                 </span>
               </motion.div>
 
@@ -1807,9 +1807,9 @@ export default function DefaultHomePage() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]"
               >
-                <span className="block">{getContent(pageContent, "hero.title", "Trade Crypto")}</span>
-                <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent pb-2">
-                  {getContent(pageContent, "hero.subtitle", "like a pro")}
+                <span className="block">{getContent(pageContent, "hero.title", "DeMourinho")}</span>
+                <span className="block bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent pb-2">
+                  {getContent(pageContent, "hero.subtitle", "Crypto")}
                 </span>
               </motion.h1>
 
@@ -1819,7 +1819,7 @@ export default function DefaultHomePage() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl leading-relaxed"
               >
-                {getContent(pageContent, "hero.description", "Experience lightning-fast execution, institutional-grade security, and advanced trading tools designed for the modern trader.")}
+                {getContent(pageContent, "hero.description", "Trade crypto, earn passive income through staking, and grow your portfolio with AI-powered investments. Built for Africa, trusted worldwide.")}
               </motion.p>
 
               <motion.div
@@ -1835,7 +1835,7 @@ export default function DefaultHomePage() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group inline-flex items-center justify-center gap-3 h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-semibold text-white shadow-2xl shadow-blue-600/20 hover:shadow-blue-600/30 transition-shadow"
+                    className="group inline-flex items-center justify-center gap-3 h-14 px-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl font-semibold text-white shadow-2xl shadow-amber-600/20 hover:shadow-amber-600/30 transition-shadow"
                   >
                     {user ? t("start_trading") : getContent(pageContent, "hero.cta", "Start Trading Free")}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -1862,7 +1862,7 @@ export default function DefaultHomePage() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className={cn("flex flex-wrap gap-6", !isSpotEnabled && "justify-center")}
               >
-                {(pageContent?.variables?.hero?.features || ["Bank-Grade Security", "24/7 Trading", "Instant Deposits"]).map((feature: string, i: number) => (
+                {(pageContent?.variables?.hero?.features || ["M-Pesa & Bank Deposits", "Binary Options Trading", "Up to 120% APR Staking"]).map((feature: string, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle className="w-4 h-4 text-emerald-400" />
                     {feature}
@@ -1994,7 +1994,7 @@ export default function DefaultHomePage() {
 
       {/* Why Choose Us Section */}
       <Section>
-        <FloatingShapes theme={{ primary: "blue", secondary: "purple" }} count={3} />
+        <FloatingShapes theme={{ primary: "amber", secondary: "orange" }} count={3} />
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -2003,28 +2003,28 @@ export default function DefaultHomePage() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 text-blue-400 mb-6">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-400 mb-6">
                 <Award className="w-4 h-4" />
-                {getContent(pageContent, "featuresSection.badge", "Why Choose Us")}
+                {getContent(pageContent, "featuresSection.badge", "Why DeMourinho")}
               </span>
 
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
                 {getContent(pageContent, "featuresSection.title", "Built for")}{" "}
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  {getContent(pageContent, "featuresSection.subtitle", "Professional Traders")}
+                <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent">
+                  {getContent(pageContent, "featuresSection.subtitle", "African Traders")}
                 </span>
               </h2>
 
               <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-                {getContent(pageContent, "featuresSection.description", "Experience unmatched security, lightning-fast execution, and professional-grade tools designed for serious traders.")}
+                {getContent(pageContent, "featuresSection.description", "From Nairobi to Lagos, DeMourinho Crypto empowers African traders with world-class tools, M-Pesa deposits, and competitive yields that grow your wealth.")}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {(pageContent?.variables?.features || [
-                  { icon: "Shield", title: "Bank-Grade Security", description: "Multi-layer security with cold storage and 2FA", gradient: "from-emerald-500 to-cyan-500" },
-                  { icon: "Zap", title: "Lightning Fast", description: "Ultra-low latency trading engine", gradient: "from-yellow-500 to-orange-500" },
-                  { icon: "Globe", title: "Global Access", description: "Trade from anywhere in the world", gradient: "from-blue-500 to-indigo-500" },
-                  { icon: "Clock", title: "24/7 Support", description: "Round-the-clock customer support", gradient: "from-purple-500 to-pink-500" },
+                  { icon: "Shield", title: "Military-Grade Security", description: "Multi-layer encryption, cold storage & biometric 2FA", gradient: "from-emerald-500 to-teal-500" },
+                  { icon: "Zap", title: "Instant Settlement", description: "Ultra-low latency engine — trades fill in milliseconds", gradient: "from-amber-500 to-orange-500" },
+                  { icon: "Globe", title: "Africa-First Access", description: "M-Pesa, bank transfers & 10+ local payment gateways", gradient: "from-green-500 to-emerald-500" },
+                  { icon: "Clock", title: "24/7 Live Support", description: "Dedicated support team available around the clock", gradient: "from-purple-500 to-pink-500" },
                 ]).slice(0, 4).map((feature: any, i: number) => {
                   const Icon = iconMap[feature.icon] || Zap;
                   return (
@@ -2065,12 +2065,12 @@ export default function DefaultHomePage() {
                   </h3>
                   <div className="space-y-5">
                     {(pageContent?.variables?.globalSection?.platformFeatures?.items || [
-                      "Real-time market data and price feeds",
-                      "Advanced order types (Limit, Market, Stop-Loss)",
-                      "Professional TradingView charts integration",
-                      "Mobile apps for iOS and Android",
-                      "API access for algorithmic trading",
-                      "Multi-language support",
+                      "Real-time market data & live price feeds",
+                      "Advanced order types: Limit, Market, Stop-Loss",
+                      "Professional TradingView chart integration",
+                      "Binary options with up to 95% payout",
+                      "Staking pools earning up to 120% APR",
+                      "Forex & AI-powered investment portfolios",
                     ]).map((item: string, i: number) => (
                       <motion.div
                         key={i}
@@ -2105,13 +2105,13 @@ export default function DefaultHomePage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 text-blue-400 mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-400 mb-6">
               <Rocket className="w-4 h-4" />
               {getContent(pageContent, "gettingStarted.badge", "Get Started")}
             </span>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               {getContent(pageContent, "gettingStarted.title", "Start Trading")}{" "}
-              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent">
                 {getContent(pageContent, "gettingStarted.subtitle", "in Minutes")}
               </span>
             </h2>
@@ -2119,13 +2119,13 @@ export default function DefaultHomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="hidden md:block absolute top-28 left-[20%] right-[20%] h-0.5">
-              <div className="h-full bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-cyan-500/50" />
+              <div className="h-full bg-gradient-to-r from-amber-500/50 via-orange-500/50 to-amber-500/50" />
             </div>
 
             {(pageContent?.variables?.gettingStarted?.steps || [
-              { step: "01", title: "Create Account", description: "Sign up in seconds with just your email.", icon: "Users", gradient: "from-blue-500 to-cyan-500" },
-              { step: "02", title: "Fund Your Wallet", description: "Deposit funds using multiple payment methods.", icon: "Wallet", gradient: "from-purple-500 to-pink-500" },
-              { step: "03", title: "Start Trading", description: "Access markets and start trading instantly.", icon: "TrendingUp", gradient: "from-orange-500 to-red-500" },
+              { step: "01", title: "Create Account", description: "Sign up in 30 seconds — no KYC required to start.", icon: "Users", gradient: "from-amber-500 to-orange-500" },
+              { step: "02", title: "Deposit Funds", description: "Top up via M-Pesa, bank transfer, or crypto instantly.", icon: "Wallet", gradient: "from-emerald-500 to-teal-500" },
+              { step: "03", title: "Start Earning", description: "Trade, stake, or invest with AI — profits hit your wallet.", icon: "TrendingUp", gradient: "from-orange-500 to-red-500" },
             ]).map((step: any, i: number) => {
               const Icon = iconMap[step.icon] || Users;
               return (
@@ -2165,8 +2165,8 @@ export default function DefaultHomePage() {
 
       {/* CTA Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/10 to-transparent" />
-        <FloatingShapes theme={{ primary: "blue", secondary: "indigo" }} count={3} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-600/10 to-transparent" />
+        <FloatingShapes theme={{ primary: "amber", secondary: "orange" }} count={3} />
 
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           <motion.div
@@ -2188,7 +2188,7 @@ export default function DefaultHomePage() {
             <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
               {user
                 ? t("explore_our_markets_description")
-                : getContent(pageContent, "cta.description", "Join thousands of traders who trust our platform. Start your journey to financial freedom today.")}
+                : getContent(pageContent, "cta.description", "Join thousands of African traders building wealth on DeMourinho Crypto. Your financial future — your terms, your timeline.")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
