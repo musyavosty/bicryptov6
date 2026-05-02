@@ -16,4 +16,4 @@ export const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "DeMourinho Crypto"
 
 export const siteDescription =
   process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
-  "DeMourinho Crypto — premium cryptocurrency exchange and trading platform.";
+  "DeMourinho Crypto — Africa's premier digital asset exchange. Trade crypto, earn up to 120% APR staking, binary options up to 95% payout, copy trading, AI investments and more.";
