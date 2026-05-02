@@ -1538,25 +1538,25 @@ export default function DefaultHomePage() {
 
     const fetchData = async () => {
       try {
-        const [contentResponse, statsResponse] = await Promise.all([
-          $fetch<PageContent>({
-            url: `/api/content/default-page/home`,
-            method: "GET",
-            params: { pageSource: 'default' },
-            silent: true
-          }),
-          $fetch<LandingStats>({
-            url: `/api/content/landing-stats`,
-            method: "GET",
-            silent: true
-          })
-        ]);
-
+        const contentResponse = await $fetch<PageContent>({
+          url: `/api/content/default-page/home`,
+          method: "GET",
+          params: { pageSource: 'default' },
+          silent: true
+        });
         if (contentResponse.data) setPageContent(contentResponse.data);
-        if (statsResponse.data) setLandingStats(statsResponse.data);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("Error loading page content:", error);
       }
+
+      // Fetch landing stats non-blocking — slow DB aggregation, don't hold up the page
+      $fetch<LandingStats>({
+        url: `/api/content/landing-stats`,
+        method: "GET",
+        silent: true
+      }).then(statsResponse => {
+        if (statsResponse.data) setLandingStats(statsResponse.data);
+      }).catch(() => {});
     };
 
     fetchData();

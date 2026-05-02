@@ -201,7 +201,7 @@ const tradingViewQueries = [
   PRIMARY KEY ((symbol, "userId"), "createdAt", id)
   WITH CLUSTERING ORDER BY ("createdAt" DESC, id ASC);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaKeyspace}.orderbook_by_symbol AS
-  SELECT price, side, amount FROM ${exports.scyllaKeyspace}.orderbook
+  SELECT * FROM ${exports.scyllaKeyspace}.orderbook
   WHERE symbol IS NOT NULL AND price IS NOT NULL AND side IS NOT NULL
   PRIMARY KEY (symbol, price, side);`,
 ];
@@ -283,7 +283,7 @@ const futuresViewQueries = [
   PRIMARY KEY ((symbol, "userId"), "createdAt", id)
   WITH CLUSTERING ORDER BY ("createdAt" DESC, id ASC);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.orderbook_by_symbol AS
-  SELECT price, side, amount FROM ${exports.scyllaFuturesKeyspace}.orderbook
+  SELECT * FROM ${exports.scyllaFuturesKeyspace}.orderbook
   WHERE symbol IS NOT NULL AND price IS NOT NULL AND side IS NOT NULL
   PRIMARY KEY (symbol, price, side);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.positions_by_symbol AS
