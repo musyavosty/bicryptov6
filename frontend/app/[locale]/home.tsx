@@ -80,6 +80,8 @@ import { SocialProofToast } from "./components/social-proof-toast";
 import { StakingCalculator } from "./components/staking-calculator";
 import { TrustStatsBar } from "./components/trust-stats-bar";
 import { TestimonialsSection } from "./components/testimonials-section";
+import { AnnouncementBanner } from "./components/announcement-banner";
+import { AnimatedStats } from "./components/animated-stats";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -1779,6 +1781,7 @@ export default function DefaultHomePage() {
 
   return (
     <div className="relative w-full min-h-screen">
+      <AnnouncementBanner />
       <MeshBackground />
       <NoiseOverlay />
 
@@ -2001,6 +2004,9 @@ export default function DefaultHomePage() {
 
       {/* Extension Sections - Each with unique design and real data */}
       {dynamicFeatures.map((feature, index) => renderExtensionSection(feature, index))}
+
+      {/* Platform Stats */}
+      <AnimatedStats />
 
       {/* Why Choose Us Section */}
       <Section>

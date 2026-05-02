@@ -1,0 +1,34 @@
+{
+  "name": "DeMourinho Crypto",
+  "short_name": "DM Crypto",
+  "description": "Africa's Premier Digital Exchange — Trade, Stake & Earn",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/img/logo/favicon-96x96.webp",
+      "sizes": "96x96",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/logo/apple-icon-180x180.webp",
+      "sizes": "180x180",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/logo/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "screenshots": [],
+  "lang": "en",
+  "dir": "ltr"
+}
