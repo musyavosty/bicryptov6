@@ -78,6 +78,8 @@ import { MobileAppSection } from "./components/mobile-app-section";
 import { getCryptoImageUrl } from "@/utils/image-fallback";
 import { SocialProofToast } from "./components/social-proof-toast";
 import { StakingCalculator } from "./components/staking-calculator";
+import { TrustStatsBar } from "./components/trust-stats-bar";
+import { TestimonialsSection } from "./components/testimonials-section";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -1987,6 +1989,9 @@ export default function DefaultHomePage() {
         </motion.div>
       </section>
 
+      {/* Trust Stats Bar */}
+      <TrustStatsBar />
+
       {/* Live Ticker */}
       {isSpotEnabled && topAssets.length > 0 && pageContent?.variables?.ticker?.enabled !== false && (
         <div className="relative border-y border-white/5 mt-20">
@@ -2164,6 +2169,9 @@ export default function DefaultHomePage() {
           </div>
         </div>
       </Section>
+
+      {/* Testimonials */}
+      <TestimonialsSection />
 
       {/* Social Proof Toast — floating activity notifications */}
       <SocialProofToast />
