@@ -87,6 +87,7 @@ import { FAQSection } from "./components/faq-section";
 import { NewsletterCapture } from "./components/newsletter-capture";
 import { BlogPreview } from "./components/blog-preview";
 import { TokenSaleBanner } from "./components/token-sale-banner";
+import { EcosystemStrip } from "./components/ecosystem-strip";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -1999,6 +2000,7 @@ export default function DefaultHomePage() {
 
       {/* Trust Stats Bar */}
       <TrustStatsBar />
+      <EcosystemStrip />
       <PressStrip />
 
       {/* Live Ticker */}
