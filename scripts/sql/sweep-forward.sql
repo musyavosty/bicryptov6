@@ -74,30 +74,30 @@ INSERT INTO exchange_currency (id, currency, name, `precision`, status, fee) VAL
   ON DUPLICATE KEY UPDATE name=VALUES(name), `precision`=VALUES(`precision`), status=1, fee=VALUES(fee);
 
 -- ============ TRADING PAIRS (24) ============
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('fd6f49a5-918a-4a9a-978b-07e06a0ad9ed', 'BTC/USDT', 'BTC', 1, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('4e022445-5f1d-4e76-9a43-e914eef46c19', 'ETH/USDT', 'ETH', 1, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('3fec5d12-923b-42a0-b3d0-00925f84a4fe', 'BNB/USDT', 'BNB', 1, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('aba6f411-5bd5-44ad-8f4f-92471a567178', 'SOL/USDT', 'SOL', 1, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('f13134aa-b986-4a8c-a560-25a8e082f165', 'XRP/USDT', 'XRP', 1, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('7958ddf8-1d17-4b05-a6fa-fd8662a5f3df', 'ADA/USDT', 'ADA', 0, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('421800ee-0b40-44db-9881-44a85a604b76', 'DOGE/USDT', 'DOGE', 1, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('3b59a3f5-197e-4b1a-82cc-3d7c5283b4ba', 'MATIC/USDT', 'MATIC', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c796e6bc-d673-4ac5-aeb5-63e88d1d01e3', 'AVAX/USDT', 'AVAX', 0, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('214a94a2-dafb-4771-a33a-32f22923df1e', 'LINK/USDT', 'LINK', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('6809bad8-b82e-45cc-9491-28cb1f88b741', 'DOT/USDT', 'DOT', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('64c4adae-8091-487e-b76d-6923fd3d6d4b', 'LTC/USDT', 'LTC', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c2823a48-615b-4f14-b47c-cb057961a994', 'TRX/USDT', 'TRX', 0, 1, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c45a007a-a187-494e-a413-13201d15b779', 'BCH/USDT', 'BCH', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('d3b0ba9d-fdbf-46c6-bc7b-a86e7e5f2784', 'ATOM/USDT', 'ATOM', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('d3dc1823-3585-463e-b5d7-d27bc47d8000', 'NEAR/USDT', 'NEAR', 1, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('81db4ea6-7758-4a8e-a9d0-d44109052ad8', 'UNI/USDT', 'UNI', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('5df35ee8-37ce-4015-9d7b-51e3e37473a4', 'FIL/USDT', 'FIL', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('842ddce5-eb95-48b4-be17-a7877447030a', 'ARB/USDT', 'ARB', 1, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('25670fc3-f94b-4593-85eb-022f3a86e97f', 'OP/USDT', 'OP', 1, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('b80b0989-b5b8-4005-87be-dc5c7b04b428', 'ETH/BTC', 'ETH', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('ae1feeff-f4ad-49d1-b763-e66127a38423', 'SOL/BTC', 'SOL', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('1708013c-f92b-47d8-91ef-9f19f765cfee', 'LINK/ETH', 'LINK', 0, 0, 1);
-INSERT INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('63b9c2be-8d8c-43a8-bae3-b99392bf2608', 'USDC/USDT', 'USDC', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('fd6f49a5-918a-4a9a-978b-07e06a0ad9ed', 'BTC/USDT', 'BTC', 1, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('4e022445-5f1d-4e76-9a43-e914eef46c19', 'ETH/USDT', 'ETH', 1, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('3fec5d12-923b-42a0-b3d0-00925f84a4fe', 'BNB/USDT', 'BNB', 1, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('aba6f411-5bd5-44ad-8f4f-92471a567178', 'SOL/USDT', 'SOL', 1, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('f13134aa-b986-4a8c-a560-25a8e082f165', 'XRP/USDT', 'XRP', 1, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('7958ddf8-1d17-4b05-a6fa-fd8662a5f3df', 'ADA/USDT', 'ADA', 0, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('421800ee-0b40-44db-9881-44a85a604b76', 'DOGE/USDT', 'DOGE', 1, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('3b59a3f5-197e-4b1a-82cc-3d7c5283b4ba', 'MATIC/USDT', 'MATIC', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c796e6bc-d673-4ac5-aeb5-63e88d1d01e3', 'AVAX/USDT', 'AVAX', 0, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('214a94a2-dafb-4771-a33a-32f22923df1e', 'LINK/USDT', 'LINK', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('6809bad8-b82e-45cc-9491-28cb1f88b741', 'DOT/USDT', 'DOT', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('64c4adae-8091-487e-b76d-6923fd3d6d4b', 'LTC/USDT', 'LTC', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c2823a48-615b-4f14-b47c-cb057961a994', 'TRX/USDT', 'TRX', 0, 1, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('c45a007a-a187-494e-a413-13201d15b779', 'BCH/USDT', 'BCH', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('d3b0ba9d-fdbf-46c6-bc7b-a86e7e5f2784', 'ATOM/USDT', 'ATOM', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('d3dc1823-3585-463e-b5d7-d27bc47d8000', 'NEAR/USDT', 'NEAR', 1, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('81db4ea6-7758-4a8e-a9d0-d44109052ad8', 'UNI/USDT', 'UNI', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('5df35ee8-37ce-4015-9d7b-51e3e37473a4', 'FIL/USDT', 'FIL', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('842ddce5-eb95-48b4-be17-a7877447030a', 'ARB/USDT', 'ARB', 1, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('25670fc3-f94b-4593-85eb-022f3a86e97f', 'OP/USDT', 'OP', 1, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('b80b0989-b5b8-4005-87be-dc5c7b04b428', 'ETH/BTC', 'ETH', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('ae1feeff-f4ad-49d1-b763-e66127a38423', 'SOL/BTC', 'SOL', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('1708013c-f92b-47d8-91ef-9f19f765cfee', 'LINK/ETH', 'LINK', 0, 0, 1);
+INSERT IGNORE INTO exchange_market (id, pair, currency, isTrending, isHot, status) VALUES ('63b9c2be-8d8c-43a8-bae3-b99392bf2608', 'USDC/USDT', 'USDC', 0, 0, 1);
 
 -- ============ ASSET CURRENCIES (22 crypto + 5 fiat) ============
 UPDATE currency SET status=1 WHERE id='BTC';

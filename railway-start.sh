@@ -232,6 +232,40 @@ else
   echo "Database already has $TABLE_COUNT tables. Skipping import + seed."
 fi
 
+# -------- Run platform data sweeps (exchanges, markets, settings) --------
+# These sweeps activate Binance/KuCoin in public mode, populate trading pairs,
+# currencies, investment plans, staking pools, etc. Fully idempotent (INSERT IGNORE
+# + ON DUPLICATE KEY UPDATE throughout). Skipped if exchange_market already has rows.
+MARKET_COUNT=$(node -e "
+  const mysql = require('mysql2/promise');
+  (async () => {
+    let c, count = 0;
+    try {
+      c = await mysql.createConnection({
+        host: process.env.DB_HOST, port: +process.env.DB_PORT,
+        user: process.env.DB_USER, password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+      });
+      const [rows] = await c.query('SELECT COUNT(*) AS n FROM exchange_market');
+      count = rows[0].n;
+    } catch (e) { /* table may not exist yet if DB is fresh */ }
+    finally {
+      if (c) { try { await c.end(); } catch(_){} }
+      console.log(count);
+      process.exit(0);
+    }
+  })();
+" | tr -d '[:space:]')
+
+if [ "${MARKET_COUNT:-0}" -lt "5" ]; then
+  echo "Running platform data sweeps (exchange markets, settings, plans)..."
+  node scripts/import-sql.js scripts/sql/sweep-forward.sql || echo "WARN: sweep-forward had errors (may be partially applied)"
+  node scripts/import-sql.js scripts/sql/sweep-phase2-forward.sql || echo "WARN: sweep-phase2 had errors (may be partially applied)"
+  echo "Data sweeps complete."
+else
+  echo "Exchange markets already populated (${MARKET_COUNT} rows). Skipping sweeps."
+fi
+
 # -------- Start the app --------
 echo "Starting backend (port ${BACKEND_PORT:-4000}) + frontend (port ${PORT:-3000}) under PM2..."
 exec npx pm2-runtime start production.config.js --env production
