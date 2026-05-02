@@ -51,6 +51,12 @@ else
   echo "Redis target: ${REDIS_HOST}:${REDIS_PORT}"
 fi
 
+# -------- Third-party API key defaults --------
+# Set fallback values so the service works out of the box.
+# Override any of these in Railway → Variables to use your own keys.
+export APP_FIAT_RATES_PROVIDER="${APP_FIAT_RATES_PROVIDER:-openexchangerates}"
+export APP_OPENEXCHANGERATES_APP_ID="${APP_OPENEXCHANGERATES_APP_ID:-988af4efe4054775a3c6e4030c95e1f5}"
+
 # -------- Build a runtime .env from the process env ---------
 # Railway already injects every variable into the process env, but Bicrypto's
 # config.js explicitly looks for a .env file, so we synthesize one. The regex
@@ -231,6 +237,11 @@ if [ "${TABLE_COUNT:-0}" -lt "10" ]; then
 else
   echo "Database already has $TABLE_COUNT tables. Skipping import + seed."
 fi
+
+# -------- Hotfixes: patch live DB data errors (idempotent, safe every boot) --------
+echo "Applying data hotfixes..."
+node scripts/import-sql.js scripts/sql/hotfix-001-market-pairs.sql || echo "WARN: hotfix-001 had errors"
+echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
 # These sweeps activate Binance/KuCoin in public mode, populate trading pairs,
