@@ -13,6 +13,7 @@ import { getSettings } from "@/lib/fetchers/settings";
 import ConditionalLayoutProvider from "@/components/layout/conditional-layout-provider";
 import { SettingsStatus } from "@/components/development/settings-status";
 import { GlobalAuthDetector } from "@/components/auth/global-auth-detector";
+import { LiveChatButton } from "@/app/[locale]/components/live-chat-button";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -247,6 +248,7 @@ export default async function RootLayout(
                   {children}
                   <SettingsStatus />
                   <GlobalAuthDetector />
+                  <LiveChatButton />
                 </ConditionalLayoutProvider>
               </DirectionProvider>
             </Providers>

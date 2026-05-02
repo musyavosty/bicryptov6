@@ -76,6 +76,8 @@ import { useWalletStore } from "@/store/finance/wallet-store";
 import { useTranslations } from "next-intl";
 import { MobileAppSection } from "./components/mobile-app-section";
 import { getCryptoImageUrl } from "@/utils/image-fallback";
+import { SocialProofToast } from "./components/social-proof-toast";
+import { StakingCalculator } from "./components/staking-calculator";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -1243,6 +1245,9 @@ function StakingSection({ feature, data }: { feature: any; data: any }) {
             </Link>
           </motion.div>
         </div>
+
+        {/* Staking Profit Calculator */}
+        <StakingCalculator />
       </motion.div>
     </section>
   );
@@ -2159,6 +2164,9 @@ export default function DefaultHomePage() {
           </div>
         </div>
       </Section>
+
+      {/* Social Proof Toast — floating activity notifications */}
+      <SocialProofToast />
 
       {/* Mobile App Section */}
       {pageContent?.variables?.mobileApp?.enabled !== false && <MobileAppSection />}
