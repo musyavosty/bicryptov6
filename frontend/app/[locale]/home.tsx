@@ -82,6 +82,8 @@ import { TrustStatsBar } from "./components/trust-stats-bar";
 import { TestimonialsSection } from "./components/testimonials-section";
 import { AnnouncementBanner } from "./components/announcement-banner";
 import { AnimatedStats } from "./components/animated-stats";
+import { PressStrip } from "./components/press-strip";
+import { FAQSection } from "./components/faq-section";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -1994,6 +1996,7 @@ export default function DefaultHomePage() {
 
       {/* Trust Stats Bar */}
       <TrustStatsBar />
+      <PressStrip />
 
       {/* Live Ticker */}
       {isSpotEnabled && topAssets.length > 0 && pageContent?.variables?.ticker?.enabled !== false && (
@@ -2183,6 +2186,7 @@ export default function DefaultHomePage() {
       <SocialProofToast />
 
       {/* Mobile App Section */}
+      <FAQSection />
       {pageContent?.variables?.mobileApp?.enabled !== false && <MobileAppSection />}
 
       {/* CTA Section */}
