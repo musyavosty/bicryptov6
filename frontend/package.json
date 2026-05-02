@@ -71,6 +71,7 @@
     "dompurify": "^3.3.3",
     "embla-carousel-react": "^8.6.0",
     "encoding": "^0.1.13",
+    "ethers": "^6.13.5",
     "framer-motion": "12.23.25",
     "html-to-image": "^1.11.13",
     "https-browserify": "^1.0.0",
