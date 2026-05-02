@@ -1,37 +1,39 @@
 #!/usr/bin/env bash
 # scripts/push-to-github.sh
 #
-# Safe one-liner to push the current main branch to the demo GitHub repo.
-# Uses GITHUB_PERSONAL_ACCESS_TOKEN from the environment — never written to disk.
+# Push current HEAD to GitHub — triggers Railway auto-deploy.
+# Requires GITHUB_PERSONAL_ACCESS_TOKEN in the environment (Replit Secret).
 #
-# Usage:  bash scripts/push-to-github.sh
+# Usage:
+#   bash scripts/push-to-github.sh
+#   bash scripts/push-to-github.sh "feat: my commit message"
 
 set -euo pipefail
 
-REPO_URL="github.com/musyavosty/bicryptov6.git"
-REMOTE="github"
+TOKEN="${GITHUB_PERSONAL_ACCESS_TOKEN:-}"
+REPO="musyavosty/bicryptov6"
+BRANCH="main"
 
-if [ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]; then
-  echo "ERROR: GITHUB_PERSONAL_ACCESS_TOKEN is not set in the environment." >&2
+if [[ -z "$TOKEN" ]]; then
+  echo "❌  GITHUB_PERSONAL_ACCESS_TOKEN is not set." >&2
+  echo "    Add it via Replit Secrets and try again." >&2
   exit 1
 fi
 
-# (Re)wire the github remote with the embedded token.
-if git remote | grep -q "^${REMOTE}$"; then
-  git remote set-url "${REMOTE}" "https://x-access-token:${GITHUB_PERSONAL_ACCESS_TOKEN}@${REPO_URL}"
-else
-  git remote add "${REMOTE}" "https://x-access-token:${GITHUB_PERSONAL_ACCESS_TOKEN}@${REPO_URL}"
-fi
+MSG="${1:-chore: agent checkpoint}"
 
-# Make sure local main has every change committed before pushing.
+# Stage everything and commit (skip if nothing to commit)
 git add -A
-if ! git diff --cached --quiet; then
-  git commit -m "chore(deploy): Railway hardening pass + updated agent prompt"
+if git diff --cached --quiet; then
+  echo "ℹ️  Nothing new to commit — pushing existing HEAD."
+else
+  git commit -m "$MSG"
+  echo "✅  Committed: $MSG"
 fi
 
-# Push main → main. Plain push, no force.
-git push "${REMOTE}" HEAD:main
+# Push using token inline in URL — no permanent remote mutation
+git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "HEAD:${BRANCH}"
 
-# Wipe the embedded token from the remote URL so it never lands in .git/config logs.
-git remote set-url "${REMOTE}" "https://${REPO_URL}"
-echo "Pushed to https://${REPO_URL%.git}"
+echo ""
+echo "🚀  Pushed → github.com/${REPO} (${BRANCH})"
+echo "    Railway auto-deploy will start in ~30 seconds."
