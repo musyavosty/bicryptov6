@@ -84,6 +84,7 @@ import { AnnouncementBanner } from "./components/announcement-banner";
 import { AnimatedStats } from "./components/animated-stats";
 import { PressStrip } from "./components/press-strip";
 import { FAQSection } from "./components/faq-section";
+import { NewsletterCapture } from "./components/newsletter-capture";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -2187,6 +2188,14 @@ export default function DefaultHomePage() {
 
       {/* Mobile App Section */}
       <FAQSection />
+
+      {/* Newsletter Capture */}
+      <section className="py-8 px-4">
+        <div className="container mx-auto max-w-2xl">
+          <NewsletterCapture />
+        </div>
+      </section>
+
       {pageContent?.variables?.mobileApp?.enabled !== false && <MobileAppSection />}
 
       {/* CTA Section */}
