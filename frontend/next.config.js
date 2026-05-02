@@ -118,9 +118,13 @@ const buildExtColumnAliasesAbsolute = () => {
 };
 
 // Bundle analyzer - run with: ANALYZE=true pnpm build
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
+// Loaded conditionally so production builds (where devDeps are skipped) don't break.
+let withBundleAnalyzer = (cfg) => cfg;
+try {
+  withBundleAnalyzer = require("@next/bundle-analyzer")({
+    enabled: process.env.ANALYZE === "true",
+  });
+} catch (_) {}
 
 // Multi-path environment loading with fallbacks (same approach as backend)
 const envPaths = [
