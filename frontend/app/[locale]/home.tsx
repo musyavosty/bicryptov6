@@ -86,6 +86,7 @@ import { PressStrip } from "./components/press-strip";
 import { FAQSection } from "./components/faq-section";
 import { NewsletterCapture } from "./components/newsletter-capture";
 import { BlogPreview } from "./components/blog-preview";
+import { TokenSaleBanner } from "./components/token-sale-banner";
 import { useConfigStore } from "@/store/config";
 import { $fetch } from "@/lib/api";
 import { buildMarketLink } from "@/utils/market-links";
@@ -2012,6 +2013,9 @@ export default function DefaultHomePage() {
 
       {/* Platform Stats */}
       <AnimatedStats />
+
+      {/* Token Sale Banner */}
+      <TokenSaleBanner />
 
       {/* Why Choose Us Section */}
       <Section>
