@@ -30,7 +30,6 @@ class nftMetadataBackup extends sequelize_1.Model {
             locations: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: false,
-                defaultValue: {},
             },
             encrypted: {
                 type: sequelize_1.DataTypes.BOOLEAN,

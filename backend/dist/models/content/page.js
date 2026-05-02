@@ -80,7 +80,6 @@ class page extends sequelize_1.Model {
             content: {
                 type: sequelize_1.DataTypes.TEXT("long"),
                 allowNull: false,
-                defaultValue: "",
                 validate: {
                     isValidContent: function (value) {
                         if (this.isBuilderPage && !value) {

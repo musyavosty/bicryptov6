@@ -76,7 +76,6 @@ class tradingBot extends sequelize_1.Model {
             strategyConfig: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: false,
-                defaultValue: {},
             },
             maxPositionSize: {
                 type: sequelize_1.DataTypes.DECIMAL(18, 8),

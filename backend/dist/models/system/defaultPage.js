@@ -33,19 +33,16 @@ class defaultPage extends sequelize_1.Model {
             variables: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: true,
-                defaultValue: {},
                 comment: 'Structured data for home page editing (texts, images, etc.)',
             },
             content: {
                 type: sequelize_1.DataTypes.TEXT,
                 allowNull: true,
-                defaultValue: "",
                 comment: 'HTML/markdown content for legal pages',
             },
             meta: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: true,
-                defaultValue: {},
                 comment: 'SEO metadata and other page settings',
             },
             status: {
