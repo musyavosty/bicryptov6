@@ -204,7 +204,8 @@ async function getYesterdayCandles() {
         const startOfYesterday = new Date(endOfYesterday.getTime() - 24 * 60 * 60 * 1000);
         const query = `
       SELECT * FROM ${scyllaFuturesKeyspace}.latest_candles
-      WHERE "createdAt" >= ? AND "createdAt" < ?;
+      WHERE "createdAt" >= ? AND "createdAt" < ?
+      ALLOW FILTERING;
     `;
         const result = await client.execute(query, [startOfYesterday.toISOString(), endOfYesterday.toISOString()], { prepare: true });
         const yesterdayCandles = {};
