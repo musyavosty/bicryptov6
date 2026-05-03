@@ -1,5 +1,5 @@
 import ExchangeManager from "@b/utils/exchange";
-import { hasClients, sendMessageToRoute } from "@b/handler/Websocket";
+import { hasClients, messageBroker } from "@b/handler/Websocket";
 import { models } from "@b/db";
 import { logError } from "@b/utils/logger";
 import { Op } from "sequelize";
@@ -64,7 +64,7 @@ class TickerHandler {
   }
 
   private async sendTickersToClients(tickers) {
-    sendMessageToRoute(
+    messageBroker.broadcastToSubscribedClients(
       "/api/exchange/ticker",
       { type: "tickers" },
       {
