@@ -59,7 +59,13 @@ const dbConfig = {
   define: {
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
-  }
+  },
+  pool: {
+    max: 20,
+    min: 2,
+    acquire: 30000,
+    idle: 10000,
+  },
 };
 
 module.exports = {
