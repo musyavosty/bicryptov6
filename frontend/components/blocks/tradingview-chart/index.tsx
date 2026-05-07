@@ -805,6 +805,54 @@ const TradingViewChartBase = ({
     }
   }, [isDark, chartReady, tvWidget]);
 
+  // Binary order entry price lines on the TradingView chart
+  // Creates a horizontal line at the entry price for each PENDING binary order
+  const binaryPriceLineRefs = useRef<Record<string, any>>({});
+  useEffect(() => {
+    if (!chartReady || !tvWidget) return;
+    try {
+      const chart = tvWidget.chart?.();
+      if (!chart || typeof chart.createOrderLine !== "function") return;
+
+      // Determine which PENDING order IDs we want lines for
+      const pendingOrders = orders.filter((o: any) => o.status === "PENDING" && o.entryPrice > 0);
+      const pendingIds = new Set(pendingOrders.map((o: any) => o.id));
+
+      // Remove lines for orders that are no longer pending
+      for (const id of Object.keys(binaryPriceLineRefs.current)) {
+        if (!pendingIds.has(id)) {
+          try { binaryPriceLineRefs.current[id].remove(); } catch {}
+          delete binaryPriceLineRefs.current[id];
+        }
+      }
+
+      // Create lines for new PENDING orders
+      for (const order of pendingOrders) {
+        if (binaryPriceLineRefs.current[order.id]) continue; // already drawn
+        const isBull = ["RISE", "HIGHER", "TOUCH", "CALL", "UP"].includes(order.side);
+        const color = isBull ? "#22c55e" : "#ef4444";
+        try {
+          const line = chart.createOrderLine()
+            .setTooltip(`Entry: ${order.entryPrice}`)
+            .setLineLength(25)
+            .setLineWidth(1)
+            .setLineStyle(2)
+            .setBodyTextColor("#ffffff")
+            .setBodyBackgroundColor(color)
+            .setBodyBorderColor(color)
+            .setLineColor(color)
+            .setQuantityBackgroundColor(color)
+            .setQuantityBorderColor(color)
+            .setQuantityTextColor("#ffffff")
+            .setPrice(order.entryPrice)
+            .setQuantity(String(order.amount ?? ""))
+            .setText(order.side);
+          binaryPriceLineRefs.current[order.id] = line;
+        } catch {}
+      }
+    } catch {}
+  }, [orders, chartReady, tvWidget]);
+
   // Show loading state while TradingView is loading
   if (isTradingViewLoading) {
     return (
