@@ -1039,13 +1039,23 @@ export const useBinaryStore = create<BinaryState>()(
                 }));
               }
 
-              // Update real balance
+              // Update real balance and sync demo balance from server
+              // When in demo mode, server wallet is the authoritative balance source
+              // (backend credits USDT wallet on binary WIN even for demo orders)
+              const serverBalance = data.balance;
+              const currentDemoBalance = get().demoBalance;
+              const inDemoMode = get().tradingMode === "demo";
               set({
-                realBalance: data.balance,
+                realBalance: serverBalance,
                 isLoadingWallet: false,
-                // If in real mode, update the displayed balance
+                // In real mode: update displayed balance from server
                 ...(get().tradingMode === "real"
-                  ? { balance: data.balance }
+                  ? { balance: serverBalance }
+                  : {}),
+                // In demo mode: sync demoBalance from server if server has more
+                // (indicates a WIN was processed server-side but WS broadcast missed)
+                ...(inDemoMode && serverBalance > currentDemoBalance
+                  ? { demoBalance: serverBalance, balance: serverBalance }
                   : {}),
               });
             } else {
