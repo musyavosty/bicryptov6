@@ -50,7 +50,7 @@ class OrderHandler {
         try {
             const [currency, pair] = order.symbol.split("/");
             const market = await db_1.models.exchangeMarket.findOne({
-                where: { currency, pair },
+                where: { currency, pair: order.symbol },
             });
             if (!market || !market.metadata) {
                 throw (0, error_1.createError)({ statusCode: 404, message: "Market data not found" });
@@ -153,7 +153,7 @@ class OrderHandler {
                 const orders = await exchange.fetchOpenOrders(symbol);
                 const [currency, pair] = symbol.split("/");
                 const market = await db_1.models.exchangeMarket.findOne({
-                    where: { currency, pair },
+                    where: { currency, pair: symbol },
                 });
                 if (!market || !market.metadata) {
                     throw (0, error_1.createError)({ statusCode: 404, message: "Market data not found" });
@@ -201,7 +201,7 @@ class OrderHandler {
                 order.status = order.status.toUpperCase();
                 const [currency, pair] = symbol.split("/");
                 const market = await db_1.models.exchangeMarket.findOne({
-                    where: { currency, pair },
+                    where: { currency, pair: symbol },
                 });
                 if (!market || !market.metadata) {
                     throw (0, error_1.createError)({ statusCode: 404, message: "Market data not found" });

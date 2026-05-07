@@ -99,6 +99,8 @@ class BinaryOrderService {
             }
         }
         const market = (await db_1.models.exchangeMarket.findOne({
+            where: { currency, pair: `${currency}/${pair}` },
+        })) || (await db_1.models.exchangeMarket.findOne({
             where: { currency, pair },
         }));
         if (!market || !market.metadata) {

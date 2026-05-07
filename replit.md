@@ -169,6 +169,26 @@ the change is small (one line). Document such edits here.
   all CRON jobs (`processPendingOrders`, `processCurrenciesPrices`) crashing,
   binary trading not loading real-time prices.
 
+## Recent dist patches (agent log continued)
+
+- 2026-05-07 (a): **Binary + spot market-lookup fix + logo WebPs**
+  1. `backend/dist/src/api/exchange/binary/order/util/BinaryOrderService.js` line 104 —
+     Changed `WHERE { currency, pair }` (pair='USDT') to try `WHERE { currency, pair: 'BTC/USDT' }` first,
+     fall back to short form. Root cause: `binary_market` stores pair='USDT' but `exchange_market`
+     stores pair='BTC/USDT'; the mismatch caused "Market data not found" on every binary order placement.
+  2. `backend/dist/src/api/exchange/order/index.ws.js` — same lookup bug at 3 separate sites
+     (lines 56, 159, 207). All now use the full `symbol` string ('BTC/USDT') as the `pair` field
+     in the WHERE clause instead of the split short form ('USDT'). Fixes "Market data not found"
+     in spot WebSocket order updates.
+  3. Created `frontend/public/img/logo/` WebP files: logo.webp, logo-dark.webp, logo-text.webp,
+     logo-text-dark.webp, favicon-16x16.webp, favicon-32x32.webp, favicon-96x96.webp,
+     apple-icon-180x180.webp, android-chrome-192x192.webp, android-chrome-512x512.webp.
+     These are rasterised from the existing SVGs via sharp. Placing them in public/ means
+     Next.js serves them directly (public takes priority over rewrites), bypassing the
+     Next.js→backend proxy that was crashing with "Parse Error: Expected HTTP/" on 404s.
+  - Note: exchange_market.metadata population and demo wallet seeding (USDT/BTC/ETH for both
+    users) were done directly on Railway's MySQL by a prior agent session and persist there.
+
 ## Secondary issues to fix when possible
 
 - **OpenExchangeRates API key** — `processCurrenciesPrices` cron calls
