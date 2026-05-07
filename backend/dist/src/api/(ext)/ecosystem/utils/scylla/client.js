@@ -203,7 +203,8 @@ const tradingViewQueries = [
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaKeyspace}.orderbook_by_symbol AS
   SELECT * FROM ${exports.scyllaKeyspace}.orderbook
   WHERE symbol IS NOT NULL AND price IS NOT NULL AND side IS NOT NULL
-  PRIMARY KEY (symbol, price, side);`,
+  PRIMARY KEY (symbol, price, side)
+  WITH CLUSTERING ORDER BY (price ASC, side ASC);`,
 ];
 const futuresTableQueries = [
     `CREATE TABLE IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.orders (
@@ -285,12 +286,13 @@ const futuresViewQueries = [
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.orderbook_by_symbol AS
   SELECT * FROM ${exports.scyllaFuturesKeyspace}.orderbook
   WHERE symbol IS NOT NULL AND price IS NOT NULL AND side IS NOT NULL
-  PRIMARY KEY (symbol, price, side);`,
+  PRIMARY KEY (symbol, price, side)
+  WITH CLUSTERING ORDER BY (price ASC, side ASC);`,
     `CREATE MATERIALIZED VIEW IF NOT EXISTS ${exports.scyllaFuturesKeyspace}.positions_by_symbol AS
   SELECT * FROM ${exports.scyllaFuturesKeyspace}.position
   WHERE symbol IS NOT NULL AND id IS NOT NULL AND "userId" IS NOT NULL
   PRIMARY KEY ((symbol), id, "userId")
-  WITH CLUSTERING ORDER BY (id ASC);`,
+  WITH CLUSTERING ORDER BY (id ASC, "userId" ASC);`,
 ];
 const shutdown = async () => {
     await client.shutdown();
