@@ -1,8 +1,0 @@
- Add swap memory (recommended if you have low RAM) to avoid build error to low ram
-
-Run this command before insttal it  add a 2 GB swap file:
-
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile

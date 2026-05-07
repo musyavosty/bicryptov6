@@ -1,1 +1,0 @@
-to make backend work use valid ssl certificate try certibot to generate free ssl as the script uses proxy and port 4000 for backend 

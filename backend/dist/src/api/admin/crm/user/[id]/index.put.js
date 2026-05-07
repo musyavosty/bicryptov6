@@ -82,7 +82,7 @@ exports.default = async (data) => {
         emailVerified,
         status,
         profile,
-        ...(((_b = userPk.role) === null || _b === void 0 ? void 0 : _b.name) === "Super Admin" && { roleId }),
+        ...(["Super Admin", "Admin"].includes((_b = userPk.role) === null || _b === void 0 ? void 0 : _b.name) && { roleId }),
     }, {
         where: { id },
     });

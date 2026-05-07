@@ -244,9 +244,9 @@ node scripts/import-sql.js scripts/sql/hotfix-001-market-pairs.sql || echo "WARN
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
-# These sweeps activate Binance/KuCoin in public mode, populate trading pairs,
-# currencies, investment plans, staking pools, etc. Fully idempotent (INSERT IGNORE
-# + ON DUPLICATE KEY UPDATE throughout). Skipped if exchange_market already has rows.
+# Sweeps activate Binance/KuCoin, populate trading pairs, currencies,
+# investment plans, staking pools, etc. Idempotent. Skipped if exchange_market
+# already has rows; metadata is ALWAYS re-populated on every boot.
 MARKET_COUNT=$(node -e "
   const mysql = require('mysql2/promise');
   (async () => {
@@ -274,8 +274,16 @@ if [ "${MARKET_COUNT:-0}" -lt "5" ]; then
   node scripts/import-sql.js scripts/sql/sweep-phase2-forward.sql || echo "WARN: sweep-phase2 had errors (may be partially applied)"
   echo "Data sweeps complete."
 else
-  echo "Exchange markets already populated (${MARKET_COUNT} rows). Skipping sweeps."
+  echo "Exchange markets already populated (${MARKET_COUNT} rows). Skipping row sweep."
 fi
+
+# -------- Populate market metadata (always runs — idempotent) --------
+# exchange_market.metadata and futures_market.metadata must be non-NULL for
+# binary and spot order placement to work. The sweep SQL does not set metadata;
+# this script handles it separately so it's safe to run on every boot.
+echo "Populating market metadata (exchange_market + futures_market)..."
+node scripts/populate-market-metadata.js || echo "WARN: metadata population failed — binary/spot orders may reject."
+echo "Market metadata done."
 
 # -------- Start the app --------
 echo "Starting backend (port ${BACKEND_PORT:-4000}) + frontend (port ${PORT:-3000}) under PM2..."

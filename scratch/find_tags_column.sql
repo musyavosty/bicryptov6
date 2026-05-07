@@ -1,1 +1,0 @@
-SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns WHERE COLUMN_NAME = 'tags' AND TABLE_SCHEMA = 'v4';
