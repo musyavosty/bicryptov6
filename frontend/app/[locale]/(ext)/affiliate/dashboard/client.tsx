@@ -35,6 +35,11 @@ import {
   Smartphone,
   MessageCircle,
   Send,
+  Trophy,
+  Flame,
+  Star,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -593,183 +598,264 @@ export default function AffiliateDashboardClient() {
         </Alert>
       )}
 
-        {/* Referral Link Card */}
-        <Card className="mb-6 sm:mb-8 bg-linear-to-r from-blue-600/10 to-amber-600/10 border-blue-500/50 dark:border-blue-700/50">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-base sm:text-lg lg:text-xl flex items-center gap-2">
-            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
-            {t("your_referral_link")}
-          </CardTitle>
-          <CardDescription className="text-sm">
-            {t("share_this_link_to_start_earning_rewards")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
-            {/* Input with Copy Icon */}
-            <div className="relative flex-1">
-              <div className="bg-background border rounded-lg pr-12 pl-3 py-3 w-full text-xs sm:text-sm font-mono break-all">
-                {referralLink}
+        {/* ── Share & Earn Hero Card ─────────────────────────────── */}
+        <div className="mb-4 rounded-2xl overflow-hidden border border-emerald-500/20 shadow-xl shadow-emerald-500/5">
+          {/* Green accent bar */}
+          <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
+          <div className="p-4 sm:p-6 bg-gradient-to-br from-emerald-500/5 via-background to-teal-500/5">
+
+            {/* Top row: label + earnings */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <Zap className="h-3 w-3 text-emerald-500" />
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                      Your Second Income
+                    </span>
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold leading-tight">
+                  Earn up to{" "}
+                  <span className="text-emerald-500">40% commission</span>
+                  {" "}on every referral
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {(stats?.totalReferrals || 0) > 0
+                    ? `You've referred ${stats.totalReferrals} ${stats.totalReferrals === 1 ? "person" : "people"} — keep the momentum going!`
+                    : "Share your link below and start earning today"}
+                </p>
               </div>
+              <div className="shrink-0 text-right sm:text-right">
+                <div className="text-3xl font-bold text-emerald-500 tabular-nums">
+                  ${(stats?.totalEarnings || 0).toFixed(2)}
+                </div>
+                <div className="text-xs text-muted-foreground">Total earned</div>
+              </div>
+            </div>
+
+            {/* Referral Link row */}
+            <div className="flex items-center gap-2 bg-background/80 border border-border rounded-xl px-3 py-2.5 mb-4">
+              <span className="flex-1 text-xs sm:text-sm font-mono text-muted-foreground truncate select-all">
+                {referralLink}
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={copyReferralLink}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted"
+                className="shrink-0 h-7 px-2.5 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-lg"
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                <span className="text-xs font-semibold">Copy</span>
               </Button>
             </div>
 
-            {/* Share Button with Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="lg:w-auto w-full bg-linear-to-r from-blue-600 to-amber-600 hover:from-blue-700 hover:to-amber-700 text-white"
-                >
-                  <Share2 className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Share</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  onClick={() => shareViaSocial("twitter")}
-                  className="cursor-pointer"
-                >
-                  <Twitter className="h-4 w-4 mr-2" />
-                  <span>Twitter</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => shareViaSocial("facebook")}
-                  className="cursor-pointer"
-                >
-                  <Facebook className="h-4 w-4 mr-2" />
-                  <span>Facebook</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => shareViaSocial("linkedin")}
-                  className="cursor-pointer"
-                >
-                  <Linkedin className="h-4 w-4 mr-2" />
-                  <span>LinkedIn</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={shareViaEmail}
-                  className="cursor-pointer"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  <span>Email</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={shareViaSMS}
-                  className="cursor-pointer"
-                >
-                  <Smartphone className="h-4 w-4 mr-2" />
-                  <span>SMS</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={shareViaWhatsApp}
-                  className="cursor-pointer"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
-                  <span>WhatsApp</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={shareViaTelegram}
-                  className="cursor-pointer"
-                >
-                  <Send className="h-4 w-4 mr-2 text-sky-400" />
-                  <span>Telegram</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={copyShareMessage}
-                  className="cursor-pointer"
-                >
-                  <Copy className="h-4 w-4 mr-2 text-amber-400" />
-                  <span>Copy Message</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowQRCode(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <QrCode className="h-4 w-4 mr-2" />
-                  <span>{tCommon("qr_code")}</span>
-                </DropdownMenuItem>
+            {/* Primary share buttons */}
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              {/* WhatsApp — big green primary CTA */}
+              <Button
+                onClick={shareViaWhatsApp}
+                className="flex-1 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold shadow-lg shadow-green-500/20 h-11 text-sm"
+              >
+                <MessageCircle className="h-4 w-4 mr-2 shrink-0" />
+                Share on WhatsApp
+              </Button>
 
-                {/* QR Code Dialog - Separate from dropdown to prevent auto-closing */}
-                <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{t("share_via_qr_code")}</DialogTitle>
-                      <DialogDescription>
-                        {t("scan_this_qr_code_to_access_your_referral_link")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex flex-col items-center justify-center p-4">
-                      {referralLink && referralLink.trim() ? (
-                        <>
-                          <QRCodeCanvas 
-                            value={referralLink} 
-                            size={200}
-                            level="M"
-                            includeMargin={true}
-                          />
-                          <p className="mt-4 text-sm text-muted-foreground text-center">
-                            {t("you_can_save_to_others")}
-                          </p>
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-48 w-48 border-2 border-dashed border-gray-300 rounded-lg">
-                          <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-sm text-gray-500 text-center">
-                            {t("unable_to_generate_qr_code")}<br />
-                            {t("referral_link_not_available")}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex justify-center">
-                      <Button
-                        onClick={() => {
-                          if (!referralLink || !referralLink.trim()) {
-                            toast.error("Cannot download QR code: Referral link not available");
-                            return;
-                          }
-                          
-                          const canvas = document.querySelector("canvas");
-                          if (canvas) {
-                            try {
-                              const link = document.createElement("a");
-                              link.download = "referral-qrcode.png";
-                              link.href = canvas.toDataURL("image/png");
-                              link.click();
-                              toast.success("QR code downloaded");
-                            } catch (error) {
-                              console.error("Error downloading QR code:", error);
-                              toast.error("Failed to download QR code");
-                            }
-                          } else {
-                            toast.error("QR code not available for download");
-                          }
-                        }}
-                        className="mr-2"
-                      >
-                        {t("download_qr")}
-                      </Button>
-                      <DialogClose asChild>
-                        <Button variant="outline">Close</Button>
-                      </DialogClose>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              {/* Telegram */}
+              <Button
+                onClick={shareViaTelegram}
+                className="flex-1 bg-[#0088cc] hover:bg-[#006ea8] text-white font-semibold shadow-lg shadow-sky-500/20 h-11 text-sm"
+              >
+                <Send className="h-4 w-4 mr-2 shrink-0" />
+                Share on Telegram
+              </Button>
+
+              {/* Copy Message + More options */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={copyShareMessage}
+                  className="flex-1 sm:flex-none h-11 border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 text-sm"
+                >
+                  <Copy className="h-4 w-4 mr-2 shrink-0" />
+                  Copy Message
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0 h-11 w-11 border-border">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem onClick={() => shareViaSocial("twitter")} className="cursor-pointer">
+                      <Twitter className="h-4 w-4 mr-2" /><span>Twitter / X</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => shareViaSocial("facebook")} className="cursor-pointer">
+                      <Facebook className="h-4 w-4 mr-2" /><span>Facebook</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => shareViaSocial("linkedin")} className="cursor-pointer">
+                      <Linkedin className="h-4 w-4 mr-2" /><span>LinkedIn</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={shareViaEmail} className="cursor-pointer">
+                      <Mail className="h-4 w-4 mr-2" /><span>Email</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={shareViaSMS} className="cursor-pointer">
+                      <Smartphone className="h-4 w-4 mr-2" /><span>SMS</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => { e.preventDefault(); setShowQRCode(true); }}
+                      className="cursor-pointer"
+                    >
+                      <QrCode className="h-4 w-4 mr-2" /><span>{tCommon("qr_code")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* QR Code Dialog */}
+        <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("share_via_qr_code")}</DialogTitle>
+              <DialogDescription>
+                {t("scan_this_qr_code_to_access_your_referral_link")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center p-4">
+              {referralLink && referralLink.trim() ? (
+                <>
+                  <QRCodeCanvas value={referralLink} size={200} level="M" includeMargin={true} />
+                  <p className="mt-4 text-sm text-muted-foreground text-center">
+                    {t("you_can_save_to_others")}
+                  </p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 w-48 border-2 border-dashed border-gray-300 rounded-lg">
+                  <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500 text-center">
+                    {t("unable_to_generate_qr_code")}<br />
+                    {t("referral_link_not_available")}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-center">
+              <Button
+                onClick={() => {
+                  if (!referralLink || !referralLink.trim()) {
+                    toast.error("Cannot download QR code: Referral link not available");
+                    return;
+                  }
+                  const canvas = document.querySelector("canvas");
+                  if (canvas) {
+                    try {
+                      const link = document.createElement("a");
+                      link.download = "referral-qrcode.png";
+                      link.href = canvas.toDataURL("image/png");
+                      link.click();
+                      toast.success("QR code downloaded");
+                    } catch (error) {
+                      console.error("Error downloading QR code:", error);
+                      toast.error("Failed to download QR code");
+                    }
+                  } else {
+                    toast.error("QR code not available for download");
+                  }
+                }}
+                className="mr-2"
+              >
+                {t("download_qr")}
+              </Button>
+              <DialogClose asChild>
+                <Button variant="outline">Close</Button>
+              </DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Milestone / Tier Progress Card ─────────────────────── */}
+        {(() => {
+          const totalRefs = stats?.totalReferrals || 0;
+          const tiers = [
+            { name: "Bronze",   min: 0,   max: 4,   icon: "🥉", color: "from-amber-700/20 to-amber-600/10", badge: "bg-amber-700/20 text-amber-700 dark:text-amber-400 border-amber-700/30", ring: "bg-amber-600" },
+            { name: "Silver",   min: 5,   max: 24,  icon: "🥈", color: "from-slate-400/20 to-slate-300/10", badge: "bg-slate-400/20 text-slate-600 dark:text-slate-300 border-slate-400/30", ring: "bg-slate-400" },
+            { name: "Gold",     min: 25,  max: 99,  icon: "🥇", color: "from-yellow-500/20 to-yellow-400/10", badge: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30", ring: "bg-yellow-400" },
+            { name: "Platinum", min: 100, max: Infinity, icon: "💎", color: "from-sky-400/20 to-violet-400/10", badge: "bg-sky-400/20 text-sky-700 dark:text-sky-300 border-sky-400/30", ring: "bg-sky-400" },
+          ];
+          const currentTierIdx = tiers.findIndex((t, i) =>
+            totalRefs >= t.min && (i === tiers.length - 1 || totalRefs <= t.max)
+          );
+          const tier = tiers[Math.max(0, currentTierIdx)];
+          const nextTier = tiers[currentTierIdx + 1];
+          const progressPct = nextTier
+            ? Math.min(100, Math.round(((totalRefs - tier.min) / (nextTier.min - tier.min)) * 100))
+            : 100;
+          const refsToNext = nextTier ? nextTier.min - totalRefs : 0;
+
+          return (
+            <Card className={`mb-6 sm:mb-8 overflow-hidden border-0 shadow-md bg-gradient-to-br ${tier.color}`}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{tier.icon}</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-base">{tier.name} Member</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${tier.badge}`}>
+                          {totalRefs} referral{totalRefs !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {nextTier
+                          ? `Refer ${refsToNext} more ${refsToNext === 1 ? "person" : "people"} to reach ${nextTier.name} ${tiers[currentTierIdx + 1].icon}`
+                          : "You've reached the highest tier! 🎉"}
+                      </p>
+                    </div>
+                  </div>
+                  <Trophy className="h-6 w-6 text-muted-foreground/50 shrink-0" />
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1.5 mb-4">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{tier.name} ({tier.min})</span>
+                    {nextTier && <span>{nextTier.name} ({nextTier.min})</span>}
+                  </div>
+                  <div className="h-2.5 w-full bg-background/60 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${tier.ring}`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground">{progressPct}%</div>
+                </div>
+
+                {/* Tier grid */}
+                <div className="grid grid-cols-4 gap-2">
+                  {tiers.map((t, i) => (
+                    <div
+                      key={t.name}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-all ${
+                        i === currentTierIdx
+                          ? "border-current bg-background/80 shadow-sm"
+                          : i < currentTierIdx
+                          ? "border-border/30 opacity-60"
+                          : "border-dashed border-border/30 opacity-40"
+                      }`}
+                    >
+                      <span className="text-lg">{t.icon}</span>
+                      <span className="text-[10px] font-semibold leading-tight">{t.name}</span>
+                      <span className="text-[10px] text-muted-foreground">{t.min}+ refs</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
