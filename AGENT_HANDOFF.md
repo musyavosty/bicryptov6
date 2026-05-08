@@ -166,6 +166,18 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 |------|--------|------|-----|
 | `frontend/store/trade/use-binary-store.ts` | `fetchWalletData`: also sync `demoBalance` from server in demo mode when server balance > local | 2026-05-07 | WS broadcast fails after binary WIN → local demoBalance stuck at wrong value; server SPOT USDT wallet IS credited even for demo orders |
 | `frontend/components/blocks/tradingview-chart/index.tsx` | Added `useEffect` to call `chart.createOrderLine()` for each PENDING binary order | 2026-05-07 | TradingView chart (default binary chart) didn't draw entry price lines; Chart Engine addon is not installed so TradingView is always used |
+| `frontend/app/[locale]/(ext)/affiliate/dashboard/client.tsx` | Full "Share & Earn" overhaul: replaced buried share dropdown with prominent standalone WhatsApp (green) + Telegram (blue) buttons as primary CTAs; added milestone gamification card (Bronze 0–4 / Silver 5–24 / Gold 25–99 / Platinum 100+ referrals) with animated progress bar and tier grid; earnings hero shows total earned with "second income" framing | 2026-05-08 | User requested major referral UX overhaul — previous agent had WhatsApp/Telegram buried in a generic Share dropdown |
+
+## New pages & features added (2026-05-08)
+
+| Feature | Path | Notes |
+|---------|------|-------|
+| Demo trading page | `/demo` | Self-contained TradingView + mock binary order engine, $10k demo balance, no login required |
+| SEO landing — Kenya | `/(marketing)/how-to-buy-bitcoin-kenya` | Geo-targeted content page |
+| SEO landing — Nigeria | `/(marketing)/best-crypto-exchange-nigeria` | Geo-targeted content page |
+| SEO landing — Ghana | `/(marketing)/buy-usdt-ghana` | Geo-targeted content page |
+| Hero CTA | `home.tsx` | "Try Demo" button added alongside main CTA |
+| Trust micro-badges | `home.tsx` | SSL secured / 2FA / Regulated badges below hero buttons |
 
 ---
 
