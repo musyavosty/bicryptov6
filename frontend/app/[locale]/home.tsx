@@ -1870,6 +1870,19 @@ export default function DefaultHomePage() {
                     </motion.button>
                   </Link>
                 )}
+
+                {!user && (
+                  <Link href="/demo">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="inline-flex items-center justify-center gap-3 h-14 px-8 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 rounded-2xl font-semibold text-emerald-400 transition-all"
+                    >
+                      <Crosshair className="w-5 h-5" />
+                      Try Demo Free
+                    </motion.button>
+                  </Link>
+                )}
               </motion.div>
 
               <motion.div
@@ -1885,6 +1898,25 @@ export default function DefaultHomePage() {
                   </div>
                 ))}
               </motion.div>
+
+              {/* Trust micro-badges */}
+              {!user && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  className={cn("flex flex-wrap gap-x-5 gap-y-2 pt-2", !isSpotEnabled && "justify-center")}
+                >
+                  {["🔐 SSL Secured", "💳 M-Pesa & Bank", "⚡ Instant Withdrawals", "🛡️ Funds Protected"].map((badge, i) => (
+                    <span key={i} className="text-xs text-muted-foreground/70">{badge}</span>
+                  ))}
+                  {(landingStats?.platform?.users ?? 0) > 100 && (
+                    <span className="text-xs text-emerald-400 font-semibold">
+                      ✓ {(landingStats!.platform.users).toLocaleString()}+ traders joined
+                    </span>
+                  )}
+                </motion.div>
+              )}
             </div>
 
             {/* Right Side Panel */}
