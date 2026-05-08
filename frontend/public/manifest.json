@@ -1,7 +1,7 @@
 {
   "name": "DeMourinho Crypto",
   "short_name": "DM Crypto",
-  "description": "Africa's Premier Digital Exchange — Trade, Stake & Earn",
+  "description": "Africa's Premier Digital Exchange — Trade Bitcoin, USDT & 40+ coins. Deposit via M-Pesa. Withdraw instantly.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0f1a",
@@ -27,8 +27,40 @@
       "purpose": "any maskable"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Live Markets",
+      "short_name": "Markets",
+      "description": "View live crypto prices",
+      "url": "/market",
+      "icons": [{ "src": "/img/logo/favicon-96x96.webp", "sizes": "96x96" }]
+    },
+    {
+      "name": "Binary Options",
+      "short_name": "Binary",
+      "description": "Trade binary options",
+      "url": "/trade/binary/BTC/USDT",
+      "icons": [{ "src": "/img/logo/favicon-96x96.webp", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Wallet",
+      "short_name": "Wallet",
+      "description": "View your wallet balance",
+      "url": "/user/wallet",
+      "icons": [{ "src": "/img/logo/favicon-96x96.webp", "sizes": "96x96" }]
+    },
+    {
+      "name": "Try Demo",
+      "short_name": "Demo",
+      "description": "Practice trading for free",
+      "url": "/demo",
+      "icons": [{ "src": "/img/logo/favicon-96x96.webp", "sizes": "96x96" }]
+    }
+  ],
   "categories": ["finance", "business"],
   "screenshots": [],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": []
 }
