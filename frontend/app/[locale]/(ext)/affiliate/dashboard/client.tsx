@@ -33,6 +33,8 @@ import {
   Linkedin,
   QrCode,
   Smartphone,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -254,6 +256,49 @@ export default function AffiliateDashboardClient() {
     }
   };
   
+  const shareViaWhatsApp = () => {
+    if (!validateReferralLink(referralLink)) {
+      toast.error("Invalid referral link - cannot share");
+      return;
+    }
+    const text = encodeURIComponent(
+      `🚀 I've been trading crypto on DeMourinho and earning real returns.\n\nJoin me using my referral link — we both earn bonuses when you sign up and trade!\n\n${referralLink}`
+    );
+    try {
+      window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+      toast.success("WhatsApp opened");
+    } catch {
+      toast.error("Failed to open WhatsApp");
+    }
+  };
+
+  const shareViaTelegram = () => {
+    if (!validateReferralLink(referralLink)) {
+      toast.error("Invalid referral link - cannot share");
+      return;
+    }
+    const text = encodeURIComponent(
+      `🚀 I've been trading crypto on DeMourinho and earning real returns. Join me using my referral link — we both earn bonuses!`
+    );
+    const url = encodeURIComponent(referralLink);
+    try {
+      window.open(`https://t.me/share/url?url=${url}&text=${text}`, "_blank", "noopener,noreferrer");
+      toast.success("Telegram opened");
+    } catch {
+      toast.error("Failed to open Telegram");
+    }
+  };
+
+  const copyShareMessage = async () => {
+    const message = `🚀 I've been trading crypto on DeMourinho and earning real returns.\n\nJoin me using my referral link — we both earn bonuses when you sign up and trade!\n\n${referralLink}`;
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("Share message copied — paste it anywhere!");
+    } catch {
+      toast.error("Failed to copy message");
+    }
+  };
+
   const shareViaSocial = (platform: string) => {
     if (!validateReferralLink(referralLink)) {
       toast.error("Invalid referral link - cannot share");
@@ -621,6 +666,27 @@ export default function AffiliateDashboardClient() {
                 >
                   <Smartphone className="h-4 w-4 mr-2" />
                   <span>SMS</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={shareViaWhatsApp}
+                  className="cursor-pointer"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                  <span>WhatsApp</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={shareViaTelegram}
+                  className="cursor-pointer"
+                >
+                  <Send className="h-4 w-4 mr-2 text-sky-400" />
+                  <span>Telegram</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={copyShareMessage}
+                  className="cursor-pointer"
+                >
+                  <Copy className="h-4 w-4 mr-2 text-amber-400" />
+                  <span>Copy Message</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
