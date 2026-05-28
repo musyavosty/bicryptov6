@@ -1,6 +1,6 @@
 # DeMourinho Crypto — Agent Handoff Document
 
-Last updated: 2026-05-07
+Last updated: 2026-05-28
 
 This document is written for the next AI agent picking up this project. Read this
 before touching anything. It describes the full current state: what works, what
@@ -11,14 +11,14 @@ doesn't, every fix applied, and exactly what to do next.
 ## Railway MySQL connection (direct access)
 
 ```
-mysql://root:DgepiThwzwHKgQlUWxAwfvEEDyAXRBxf@switchyard.proxy.rlwy.net:46340/railway
+mysql://root:AGUBpJBufvpZzyHxtXgTmZJTJzKgJZaD@zephyr.proxy.rlwy.net:52822/railway
 ```
 
 Node.js connection snippet:
 ```js
 const conn = await mysql.createConnection({
-  host: 'switchyard.proxy.rlwy.net', port: 46340,
-  user: 'root', password: 'DgepiThwzwHKgQlUWxAwfvEEDyAXRBxf',
+  host: 'zephyr.proxy.rlwy.net', port: 52822,
+  user: 'root', password: 'AGUBpJBufvpZzyHxtXgTmZJTJzKgJZaD',
   database: 'railway', connectTimeout: 20000
 });
 ```
@@ -39,7 +39,6 @@ as `$GITHUB_PERSONAL_ACCESS_TOKEN`).
 | Email | Role | Notes |
 |-------|------|-------|
 | `superadmin@example.com` | Super Admin | Default seeded account. Change password first. |
-| `joeshady69@gmail.com` | Admin | Promoted manually 2026-05-07. Can also change user roles. |
 
 Password reset: `UPDATE user SET password=? WHERE email=?` with bcrypt hash, or use admin UI.
 
@@ -48,42 +47,51 @@ Password reset: `UPDATE user SET password=? WHERE email=?` with bcrypt hash, or 
 ## Current state: what works
 
 - **Charts**: Live Binance data via ccxt (public mode, no API key). 99–146 candles per request.
-- **Spot trading**: 24 pairs active. `exchange_market.metadata` fully populated.
-- **Binary options**: 8 markets active. Order placement and resolution work (WIN/LOSS logged).
-  Entry price line now drawn on TradingView chart (patch applied 2026-05-07).
-- **Futures trading**: 9 markets active (BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX/ARB).
+- **Spot trading**: 19 active pairs (status=1). `exchange_market.metadata` fully populated.
+- **Binary options**: 8 markets active (BTC/ETH/SOL/XRP/BNB/ADA/DOGE/MATIC vs USDT).
+  7 durations: 1, 3, 5, 15, 30, 60, 240 minutes. Min $1 / Max $10,000.
+  binaryStatus=true, binaryPracticeStatus=true. binarySettings JSON seeded.
+- **Futures trading**: 8 markets active (BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX vs USDT).
+  futures extension enabled. All 8 rows have metadata populated.
 - **BTC deposits**: mempool.space scanner — no key needed.
-- **Admin panel**: Super Admin and Admin roles both have full access.
-- **Role changes**: Admin can now update user roles from the UI (dist patch applied).
-- **Role permissions**: 585 permissions seeded for Super Admin (52) and Admin (53).
-  Support (54) has 276 view/access permissions.
+- **Admin panel**: Super Admin has full access.
+- **Investment plans**: Bronze / Silver / Gold (3 plans, 3 durations each).
+- **Staking pools**: BTC Flexible / ETH 30-Day / USDT Stable / SOL High-Yield.
+- **P2P payment methods**: 6 global methods seeded (Bank Transfer, Wise, PayPal, Revolut, Cash, Crypto USDT).
+- **NFT categories**: 6 seeded (Art, Collectibles, Gaming, Music, Photography, Sports).
+- **Ecommerce categories**: 5 seeded (E-Books, Courses, Indicators, Templates, Reports).
+- **Exchange**: Binance (primary, status=1) + KuCoin (status=1). Both active.
+  defaultExchange=binance in settings.
+- **Notifications**: IN_APP, EMAIL, PUSH (WebPush) all initialized.
 - **WebSocket**: ticker, orderbook, trades all subscribing correctly.
-- **Binary demo balance**: Now syncs from server on page load if server has a higher balance
-  (catches WINs that were processed while WS was disconnected). Patch in `use-binary-store.ts`.
 
 ---
 
 ## Current state: what doesn't work yet
 
 ### Ecosystem trading (on-chain markets)
-ScyllaDB is required. The extension boots and tries to create tables, but previously failed
-with a clustering key mismatch error. **Fix applied 2026-05-07** in
-`backend/dist/src/api/(ext)/ecosystem/utils/scylla/client.js` (3 CLUSTERING ORDER BY bugs).
-To activate: provision a ScyllaDB Cloud instance, set `SCYLLA_HOSTS`, `SCYLLA_USERNAME`,
-`SCYLLA_PASSWORD`, `SCYLLA_KEYSPACE=bicrypto` in Railway → redeploy.
+ScyllaDB is required. No CQL database provisioned — backend tries 127.0.0.1:9042 and
+gives up after 5 retries. Everything else continues to run fine.
+Fix applied 2026-05-07 to `backend/dist/src/api/(ext)/ecosystem/utils/scylla/client.js`
+(3 CLUSTERING ORDER BY bugs that would have caused table creation to fail even with a DB).
+
+To activate: provision a Cassandra-compatible instance (Apache Cassandra, ScyllaDB Cloud,
+or DataStax Astra), then set these Railway env vars and redeploy:
+- `SCYLLA_CONNECT_POINTS=host:9042` (comma-separated if multiple nodes)
+- `SCYLLA_USERNAME=your_username`
+- `SCYLLA_PASSWORD=your_password`
+- `SCYLLA_KEYSPACE=trading` (default)
+- `SCYLLA_DATACENTER=datacenter1` (match your cluster's datacenter name)
+
+Note: The backend uses the standard `cassandra-driver` package — works with any CQL-compatible DB.
 See RAILWAY_DEPLOY.md § "ScyllaDB".
 
-### Binary order WS broadcast
-After a binary order resolves (WIN/LOSS), the backend tries to broadcast to
-`/api/exchange/binary/order` WebSocket route. If the client has disconnected (navigated
-away or network blip), the broadcast logs "No clients connected" and the frontend doesn't
-get notified in real-time.
-- **Partial fix applied**: `fetchWalletData` in `use-binary-store.ts` now syncs
-  `demoBalance` from server if server wallet has more (WIN was credited to DB even if WS failed).
-- **Remaining gap**: real-time balance popup won't appear. User must navigate away and back
-  (or switch trading mode) to trigger `fetchWalletData` and see the updated balance.
-- **Full fix** would require WS auto-reconnect with order re-subscription on reconnect,
-  or server-sent events as fallback.
+### LINK/ETH cron warning (cosmetic)
+The `processCurrenciesPrices` cron tries to fetch LINK/ETH from both Binance and KuCoin.
+KuCoin doesn't have LINK/ETH — logs `[CRON] ✗ kucoin does not have market symbol LINK/ETH`
+every 2 minutes. This is harmless (Binance does have it; KuCoin falls back gracefully).
+The LINK/ETH and LINK/USDT exchange_market rows are status=0 (disabled from spot trading)
+but the cron still tries to price them. Low priority.
 
 ### Email sending
 No SMTP credentials configured. Signup confirmation emails, password resets, and
@@ -133,11 +141,8 @@ works without it. Only blocks the in-admin extension download store.
 
 ### Spot "Invalid currency" error
 When visiting the spot trading page, `[EXCHANGE] → List Orders ├─ ✗ Invalid currency`
-appears in backend logs. This is triggered when the orders list endpoint is called
-with an empty or invalid currency parameter (likely on initial page load before the
-user has selected a trading pair). This is likely cosmetic (doesn't crash the page)
-but warrants further investigation. The endpoint is `GET /api/exchange/order` and
-the currency validation happens in `backend/dist/src/api/exchange/order/index.get.js`.
+appears in backend logs. Triggered on initial page load before user selects a pair.
+Cosmetic — doesn't crash the page.
 
 ---
 
@@ -160,43 +165,46 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 
 ---
 
-## Frontend patches applied
-
-| File | Change | Date | Why |
-|------|--------|------|-----|
-| `frontend/store/trade/use-binary-store.ts` | `fetchWalletData`: also sync `demoBalance` from server in demo mode when server balance > local | 2026-05-07 | WS broadcast fails after binary WIN → local demoBalance stuck at wrong value; server SPOT USDT wallet IS credited even for demo orders |
-| `frontend/components/blocks/tradingview-chart/index.tsx` | Added `useEffect` to call `chart.createOrderLine()` for each PENDING binary order | 2026-05-07 | TradingView chart (default binary chart) didn't draw entry price lines; Chart Engine addon is not installed so TradingView is always used |
-| `frontend/app/[locale]/(ext)/affiliate/dashboard/client.tsx` | Full "Share & Earn" overhaul: replaced buried share dropdown with prominent standalone WhatsApp (green) + Telegram (blue) buttons as primary CTAs; added milestone gamification card (Bronze 0–4 / Silver 5–24 / Gold 25–99 / Platinum 100+ referrals) with animated progress bar and tier grid; earnings hero shows total earned with "second income" framing | 2026-05-08 | User requested major referral UX overhaul — previous agent had WhatsApp/Telegram buried in a generic Share dropdown |
-
-## New pages & features added (2026-05-08)
-
-| Feature | Path | Notes |
-|---------|------|-------|
-| Demo trading page | `/demo` | Self-contained TradingView + mock binary order engine, $10k demo balance, no login required |
-| SEO landing — Kenya | `/(marketing)/how-to-buy-bitcoin-kenya` | Geo-targeted content page |
-| SEO landing — Nigeria | `/(marketing)/best-crypto-exchange-nigeria` | Geo-targeted content page |
-| SEO landing — Ghana | `/(marketing)/buy-usdt-ghana` | Geo-targeted content page |
-| Hero CTA | `home.tsx` | "Try Demo" button added alongside main CTA |
-| Trust micro-badges | `home.tsx` | SSL secured / 2FA / Regulated badges below hero buttons |
-
----
-
-## Database state (as of 2026-05-07)
+## Database state (as of 2026-05-28)
 
 | Table | Rows | Notes |
 |-------|------|-------|
-| `exchange_market` | 24 | All have `metadata` populated |
-| `futures_market` | 9 | All have `metadata` populated. ARB added 2026-05-07. |
-| `binary_market` | 8 | minAmount=1, maxAmount=10000 for all |
+| `exchange_market` | 23 | 19 active (status=1), 4 disabled. All have `metadata` populated. |
+| `futures_market` | 8 | All active, all have `metadata` populated. BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX. |
+| `binary_market` | 8 | All active. minAmount=1, maxAmount=10000. BTC/ETH/SOL/XRP/BNB/ADA/DOGE/MATIC. |
+| `binary_duration` | 7 | 1/3/5/15/30/60/240 min. Profit: 80/78/75/72/70/68/65%. |
+| `investment_plan` | 3 | Bronze ($100-1k, 9%), Silver ($1k-10k, 15%), Gold ($10k-100k, 23%). |
+| `investment_duration` | 3 | 30/60/90 DAY. |
+| `staking_pools` | 4 | BTC Flexible 5%APR, ETH 30-Day 8%, USDT Stable 12%, SOL High-Yield 15%. |
+| `p2p_payment_methods` | 6 | Bank Transfer, Wise, PayPal, Revolut, Cash, Crypto USDT. |
+| `nft_category` | 6 | Art, Collectibles, Gaming, Music, Photography, Sports. |
+| `ecommerce_category` | 5 | E-Books, Courses, Indicators, Templates, Reports. |
 | `role` | 4 | Super Admin (52), Admin (53), Support (54), User (55) |
-| `role_permission` | 1446 | Seeded 2026-05-07: 585 for SA, 585 for Admin, 276 for Support |
-| `permission` | 585 | All platform permissions |
-| `wallet` (SPOT USDT) | 2 | Created 2026-05-07 for superadmin and joeshady69, balance=10000 each |
+| `exchange` | 3 | binance (active), kucoin (active), xt (disabled) |
 | `ecosystem_blockchain` | 4 | TRON, TON, XMR, SOL — all status=0 (disabled) |
-| `ecosystem_token` | 1000s | All status=0; enable per-chain via admin panel |
+
+**settings keys of note:**
+- `binaryStatus=true` — binary trading live
+- `binaryPracticeStatus=true` — demo mode enabled
+- `defaultExchange=binance` — primary exchange for spot/binary charts
+- `binarySettings` — full JSON config with all order types enabled
 
 **Missing**: `blockchain` table does not exist in this schema (it's an older schema concept;
 ecosystem uses `ecosystem_blockchain`). Don't try to create a `blockchain` table.
+
+---
+
+## Boot issue fixed: binary_market missing columns
+
+On the first-ever deploy with a fresh DB, the phase 2 sweep (`sweep-phase2-forward.sql`)
+failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmount` columns.
+Sequelize adds those columns when the backend starts — but the sweep runs BEFORE the backend.
+Result: all 76 statements in phase 2 were rolled back (binary markets, futures markets,
+investment plans, staking pools, P2P methods, NFT/ecommerce categories — all missing).
+
+**Fix applied 2026-05-28**: `scripts/sql/hotfix-002-binary-columns.sql` now runs before
+the sweep and adds these columns with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+All phase 2 data was also manually inserted directly into the live Railway DB.
 
 ---
 
@@ -207,7 +215,9 @@ ecosystem uses `ecosystem_blockchain`). Don't try to create a `blockchain` table
 | `railway-start.sh` | Boot script — runs on every Railway deploy |
 | `scripts/populate-market-metadata.js` | Idempotent — populates exchange/futures metadata. Called by railway-start.sh on every boot. |
 | `scripts/sql/sweep-forward.sql` | Activates exchanges, inserts market rows (no metadata) |
-| `scripts/sql/sweep-phase2-forward.sql` | Investment plans, staking pools, P2P settings |
+| `scripts/sql/sweep-phase2-forward.sql` | Binary markets, futures, investment plans, staking pools, P2P, NFT/ecommerce categories |
+| `scripts/sql/hotfix-001-market-pairs.sql` | Strips full pair symbols to just quote currency in exchange_market |
+| `scripts/sql/hotfix-002-binary-columns.sql` | Adds minAmount/maxAmount to binary_market before phase 2 sweep runs |
 | `production.config.js` | PM2 app definitions |
 | `backend/dist/src/api/` | Compiled API routes — surgical edits only |
 | `frontend/app/globals.css` | Theme tokens (emerald primary, deep slate dark, gold accent) |
@@ -226,11 +236,10 @@ ecosystem uses `ecosystem_blockchain`). Don't try to create a `blockchain` table
   "Service unavailable from a restricted location" when run from Replit servers.
   Any script that calls Binance must be run on Railway or a non-restricted server.
   Use hardcoded specs (see `scripts/populate-market-metadata.js`) as an alternative.
-- **Backend takes ~8 minutes cold** — the frontend will log ECONNREFUSED during
+- **Backend takes ~2 minutes cold** — the frontend will log ECONNREFUSED during
   this window. This is expected and resolves automatically.
 - **Chart Engine addon NOT installed** — `frontend/components/(ext)/chart-engine/` does
   not exist. Binary trading always uses TradingView. `isChartEngineAvailable = false`.
-  Entry price lines are now handled by the TradingView patch above.
 
 ---
 
@@ -248,15 +257,12 @@ Railway's free trial gives a fixed $5 credit. When that credit runs out:
 
 ## Suggested next steps (in priority order)
 
-1. **Set `TRON_API_KEY`** in Railway env vars → enables USDT TRC-20 deposits (user asked).
-   Then enable TRON blockchain in Admin → Ecosystem → Blockchains.
-2. **Set `APP_ETH_RPC_URL`** (Infura) → enables ETH/MATIC/ARB/AVAX ecosystem deposits.
-3. **Configure SMTP** → enables email verification, password reset, KYC notifications.
-4. **Configure OpenExchangeRates** (`APP_OPENEXCHANGERATES_APP_ID`) → stops FX rate errors.
-5. **Provision ScyllaDB** → enables ecosystem on-chain markets extension (tables will now
+1. **Configure SMTP** → enables email verification, password reset, KYC notifications.
+2. **Set `APP_OPENEXCHANGERATES_APP_ID`** → stops FX rate cron errors (free tier: 1000 req/month).
+3. **Provision ScyllaDB/Cassandra** → enables ecosystem on-chain markets (tables will now
    create successfully after the CLUSTERING ORDER BY fix applied 2026-05-07).
-6. **Investigate spot "Invalid currency"** → find and fix the empty currency parameter
-   on initial spot page load (see `backend/dist/src/api/exchange/order/index.get.js`).
-7. **Binary WS reconnect** → implement WS auto-reconnect in `use-binary-store.ts`
-   `initOrderWebSocket` so balance updates in real-time even after network blips.
-8. **Change superadmin password** on Railway → security hygiene.
+   Best free option: DataStax Astra (astra.datastax.com).
+4. **Set `TRON_API_KEY`** → enables USDT TRC-20 deposits. Then enable TRON in Admin → Ecosystem.
+5. **Set `APP_ETH_RPC_URL`** (Infura) → enables ETH/MATIC/ARB/AVAX ecosystem deposits.
+6. **Configure OpenAI or Gemini** → enables AI features (set OPENAI_API_KEY / GEMINI_API_KEY).
+7. **Change superadmin password** on Railway → security hygiene.
