@@ -53,19 +53,24 @@ See `RAILWAY_DEPLOY.md` for the step-by-step guide.
 - Login / signup / 2FA
 - Admin panel (super admin + admin roles)
 - Live BTC/ETH/etc. charts and prices via Binance public API (ccxt, no key)
-- Binary option order placement (8 markets)
-- Spot trading (24 pairs)
-- Futures trading (9 markets: BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX/ARB)
+- Binary option order placement (8 markets: BTC/ETH/SOL/XRP/BNB/ADA/DOGE/MATIC)
+- 7 trade durations: 1/3/5/15/30/60/240 minutes; profit 65–80%
+- Spot trading (19 active pairs)
+- Futures trading (8 markets: BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX)
 - Wallet UI (balances, deposit addresses — BTC deposits via mempool.space)
+- Investment plans: Bronze / Silver / Gold
+- Staking pools: BTC / ETH / USDT / SOL
+- P2P trading with 6 global payment methods
+- NFT marketplace (6 categories), ecommerce (5 categories)
 - Multi-language (12 languages), dark/light themes
 - Role-based access (Super Admin, Admin, Support, User)
 
 ## What needs credentials to work
 
-See `AGENT_HANDOFF.md` § "Credentials needed" for the full list with sign-up URLs.
+See `AGENT_HANDOFF.md` for the full list.
 
 Key items: SMTP (email), RPC nodes (ETH/SOL/etc deposits), Stripe/PayPal (fiat),
-OpenExchangeRates (FX rates), ScyllaDB (ecosystem markets).
+OpenExchangeRates (FX rates), ScyllaDB (ecosystem/on-chain markets).
 
 ## User preferences
 
