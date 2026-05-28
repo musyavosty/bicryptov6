@@ -1,0 +1,7 @@
+FROM cassandra:4.1
+
+COPY scripts/cassandra-init.sh /cassandra-init.sh
+RUN chmod +x /cassandra-init.sh
+
+ENTRYPOINT ["/cassandra-init.sh"]
+CMD ["cassandra", "-R", "-f"]
