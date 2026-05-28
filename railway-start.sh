@@ -241,6 +241,10 @@ fi
 # -------- Hotfixes: patch live DB data errors (idempotent, safe every boot) --------
 echo "Applying data hotfixes..."
 node scripts/import-sql.js scripts/sql/hotfix-001-market-pairs.sql || echo "WARN: hotfix-001 had errors"
+# hotfix-002: adds minAmount/maxAmount to binary_market BEFORE phase-2 sweep runs,
+# so sweep-phase2-forward.sql can INSERT binary market rows on a fresh DB.
+# initial.sql lacks these columns; Sequelize adds them later on backend boot — too late.
+node scripts/import-sql.js scripts/sql/hotfix-002-binary-columns.sql || echo "WARN: hotfix-002 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
