@@ -31,10 +31,11 @@ async function main() {
   });
 
   // Relax session sql_mode for the import: the dump was produced on a server
-  // with looser defaults than MySQL 8 strict mode, so even with our cleanup
-  // pass on initial.sql this prevents a single edge-case statement from
-  // killing a whole deploy.
+  // with looser defaults than MySQL 8/9 strict mode. Setting sql_mode='' at
+  // the session level disables NO_ZERO_DATE, STRICT_TRANS_TABLES, etc. for
+  // every statement in this connection — works on MySQL 8.x through 9.x.
   await conn.query("SET SESSION sql_mode=''");
+  await conn.query("SET SESSION time_zone='+00:00'");
   await conn.query("SET FOREIGN_KEY_CHECKS=0");
   await conn.query("SET UNIQUE_CHECKS=0");
   await conn.query("SET NAMES utf8mb4");
