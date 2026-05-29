@@ -1,7 +1,10 @@
 FROM cassandra:4.1
-
 COPY scripts/cassandra-init.sh /cassandra-init.sh
 RUN chmod +x /cassandra-init.sh
+
+RUN sed -i 's/rpc_address: localhost/rpc_address: 0.0.0.0/' /etc/cassandra/cassandra.yaml
+RUN sed -i 's/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: 0.0.0.0/' /etc/cassandra/cassandra.yaml
+RUN sed -i 's/listen_address: localhost/listen_address: 0.0.0.0/' /etc/cassandra/cassandra.yaml
 
 ENTRYPOINT ["/cassandra-init.sh"]
 CMD ["cassandra", "-R", "-f"]
