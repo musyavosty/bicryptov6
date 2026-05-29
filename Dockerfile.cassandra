@@ -3,18 +3,16 @@ COPY scripts/cassandra-init.sh /cassandra-init.sh
 RUN chmod +x /cassandra-init.sh
 
 # Patch cassandra.yaml at build time:
-# 1. Use rpc_interface: eth0 instead of rpc_address: 0.0.0.0
-#    - rpc_interface binds CQL to the container's actual eth0 IP
-#    - Does NOT require broadcast_rpc_address to be set (avoids the 0.0.0.0 crash)
-#    - Works regardless of CASSANDRA_RPC_ADDRESS env var being set externally
-# 2. Enable materialized views (disabled by default in Cassandra 4.1)
-RUN sed -i \
-      -e 's/^rpc_address:.*$/# rpc_address: disabled - using rpc_interface instead/' \
-      -e 's/^# rpc_interface:.*$//' \
-      /etc/cassandra/cassandra.yaml && \
-    echo 'rpc_interface: eth0' >> /etc/cassandra/cassandra.yaml && \
-    ( sed -i 's/^# materialized_views_enabled:.*/materialized_views_enabled: true/' /etc/cassandra/cassandra.yaml || true ) && \
-    ( grep -q '^materialized_views_enabled:' /etc/cassandra/cassandra.yaml || echo 'materialized_views_enabled: true' >> /etc/cassandra/cassandra.yaml )
+# 1. Enable materialized views (disabled by default in Cassandra 4.1)
+# 2. Remove rpc_interface lines so the init script can manage rpc_address cleanly
+#    at runtime (it exports the real container IP as CASSANDRA_RPC_ADDRESS so
+#    docker-entrypoint.sh writes a concrete IP — no broadcast_rpc_address needed).
+RUN ( sed -i 's/^# materialized_views_enabled:.*/materialized_views_enabled: true/' \
+          /etc/cassandra/cassandra.yaml || true ) && \
+    ( grep -q '^materialized_views_enabled:' /etc/cassandra/cassandra.yaml || \
+      echo 'materialized_views_enabled: true' >> /etc/cassandra/cassandra.yaml ) && \
+    sed -i '/^rpc_interface:/d' /etc/cassandra/cassandra.yaml && \
+    sed -i '/^# rpc_interface:/d' /etc/cassandra/cassandra.yaml
 
 ENTRYPOINT ["/cassandra-init.sh"]
 CMD ["cassandra", "-R", "-f"]
