@@ -137,8 +137,13 @@ class ExchangeManager {
         const apiPassphrase = process.env[`APP_${provider.toUpperCase()}_API_PASSPHRASE`];
         if (!apiKey || !apiSecret || apiKey === "" || apiSecret === "") {
             console_1.logger.info("EXCHANGE", `API credentials for ${provider} are missing. Falling back to public mode for charts and prices.`);
+            const publicProxyUrl = await this.fetchProviderProxyUrl(provider);
+            const publicAgent = publicProxyUrl ? createProxyAgent(publicProxyUrl) : httpsAgentIPv4;
+            if (publicProxyUrl) {
+                console_1.logger.info("EXCHANGE", `Using proxy for ${provider} (public mode)`);
+            }
             const publicExchange = new ccxt.pro[provider]({
-                agent: httpsAgentIPv4,
+                agent: publicAgent,
                 timeout: 30000,
                 enableRateLimit: true,
             });
