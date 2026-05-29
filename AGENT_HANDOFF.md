@@ -369,6 +369,8 @@ All hotfix SQL files are in `scripts/sql/` and run automatically in `railway-sta
 | `hotfix-003-deactivate-eth-markets.sql` | Deactivates all ETH-quoted `exchange_market` rows (KuCoin doesn't carry them) |
 | `hotfix-004-dedup-tables.sql` | Deduplicates exchange/binary_duration/staking_pools, inserts 27 missing binary markets |
 | `hotfix-005-chart-engine-withdraw-methods.sql` | Enables chart_engine, removes 30min/70% duplicate duration, seeds deposit/withdraw methods |
+| `hotfix-006-ecosystem-tokens.sql` | Enables USDT/USDC/native tokens on ETH/BSC/TRON/POLYGON/SOL/BTC; inserts TRON USDT TRC-20 |
+| `hotfix-007-deactivate-matic.sql` | Deactivates MATIC in exchange_currency + exchange_market (KuCoin renamed MATIC→POL; was crashing price cron every 2min) |
 
 ---
 
