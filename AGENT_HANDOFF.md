@@ -189,6 +189,51 @@ After this, all deposit chains are live.
 
 ---
 
+## Backend crash: zero-date Sequelize failure (fixed 2026-05-29)
+
+### Root cause
+
+After PM2 starts the backend, Sequelize's `sync()` runs ALTER TABLE on startup.
+MySQL 8 strict mode (`NO_ZERO_DATE`, `STRICT_TRANS_TABLES`) rejects any ALTER TABLE
+that touches a column where existing rows contain `'0000-00-00 00:00:00'`. The error:
+
+```
+Initialization failed: Incorrect datetime value: '0000-00-00 00:00:00' for column 'createdAt' at row 5
+```
+
+The `SET GLOBAL sql_mode = ''` in `railway-start.sh` relaxes the server default but
+Railway's MySQL may re-apply strict mode per-connection via `init_connect`, so the
+backend's Sequelize pool connections get a strict session anyway.
+
+### Fix applied to `railway-start.sh` (2026-05-29)
+
+Added a zero-date sweep step that runs **before PM2 starts**, after all schema fixups.
+It connects with `SET SESSION sql_mode = ''`, queries `information_schema.COLUMNS` for
+every `createdAt`, `updatedAt`, and `deletedAt` datetime/timestamp column in the
+database, then runs `UPDATE table SET col = '2020-01-01 00:00:00' WHERE col = '0000-00-00 00:00:00'`
+for each one. Nullable columns get NULL instead. Idempotent: tables with no zero dates
+are untouched. This removes all invalid datetimes before Sequelize can encounter them.
+
+### Symptom pattern in logs
+
+```
+[DATABASE] → Database...                   ← Sequelize starts syncing
+[DB] ✗ Connection failed                   ← first crash: MySQL closes mid-ALTER
+[SERVER] ✗ Initialization failed: Incorrect datetime value: '0000-00-00 00:00:00' for column 'createdAt' at row 5
+                                           ← subsequent crashes every ~6 minutes
+```
+
+If you see this pattern, the zero-date sweep either didn't run or missed a table.
+Add that table to the sweep explicitly by checking:
+```sql
+SELECT table_name, column_name FROM information_schema.columns
+WHERE table_schema='railway' AND column_name IN ('createdAt','updatedAt')
+AND data_type IN ('datetime','timestamp');
+```
+Then manually update zero dates in that table.
+
+---
+
 ## Current state: what works (Project B, as of 2026-05-29)
 
 ### Fully activated via activate-all.js (2026-05-29)
