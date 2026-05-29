@@ -148,6 +148,11 @@ async function run() {
   // ── 5. Futures markets ────────────────────────────────────────────────────
   console.log("[5] Futures Markets");
   await q("activate all existing futures", "UPDATE futures_market SET status = 1");
+  // KuCoin renamed MATIC to POL — MATIC/USDT futures no longer exists on KuCoin.
+  // The futures price cron crashes on the first missing symbol and blocks ALL
+  // futures price updates until the service restarts.
+  await q("deactivate MATIC/USDT futures_market (KuCoin uses POL/USDT)",
+    "UPDATE futures_market SET status = 0 WHERE currency = 'MATIC'");
   const futuresPairs = [
     ["LINK","USDT",0,0],["DOT","USDT",0,0],["ATOM","USDT",0,0],["ADA","USDT",0,0],
     ["LTC","USDT",0,0],["BCH","USDT",0,0],["TRX","USDT",0,0],["UNI","USDT",0,0],
@@ -392,6 +397,19 @@ async function run() {
     "UPDATE exchange_currency SET status = 0 WHERE currency = 'MATIC'");
   await q("deactivate MATIC/USDT exchange_market (KuCoin uses POL/USDT)",
     "UPDATE exchange_market SET status = 0 WHERE currency = 'MATIC'");
+
+  // BTC is missing from exchange_currency — the price cron iterates this table
+  // to build its fetch list. Without a BTC row the cron never fetches a BTC price
+  // so wallet pages and balances show stale/zero BTC prices.
+  await q("add BTC to exchange_currency if missing",
+    "INSERT INTO exchange_currency (id, currency, name, `precision`, price, status, fee) SELECT UUID(), 'BTC', 'Bitcoin', 8, 0, 1, 0.5 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM exchange_currency WHERE currency = 'BTC')");
+  await q("ensure BTC exchange_currency is active",
+    "UPDATE exchange_currency SET status = 1 WHERE currency = 'BTC' AND status = 0");
+
+  // Deactivate MATIC staking pool — MATIC is deactivated as a currency so the
+  // staking UI can't fetch its price and shows errors.
+  await q("deactivate MATIC staking pool (no live price)",
+    "UPDATE staking_pools SET status = 'INACTIVE' WHERE symbol = 'MATIC'");
 
   // ── 17. Exchanges — KuCoin as primary (Binance is geo-blocked on Railway) ──
   // Binance returns HTTP 451 from Railway's IP range even for public/no-key
