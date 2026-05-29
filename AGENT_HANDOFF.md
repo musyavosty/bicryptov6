@@ -380,6 +380,7 @@ failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmo
 | `scripts/sql/sweep-phase2-forward.sql` | Binary markets, futures, investment plans, etc. |
 | `scripts/sql/hotfix-001-market-pairs.sql` | Strips full pair symbols in exchange_market |
 | `scripts/sql/hotfix-002-binary-columns.sql` | Adds minAmount/maxAmount to binary_market |
+| `scripts/sql/hotfix-003-deactivate-eth-markets.sql` | Deactivates all ETH-quoted exchange_market rows (KuCoin doesn't carry them) |
 | `production.config.js` | PM2 app definitions |
 | `backend/dist/src/api/` | Compiled API routes — surgical edits only |
 
