@@ -374,9 +374,18 @@ async function run() {
   console.log("[16] Exchange Currencies");
   await q("activate all exchange currencies", "UPDATE exchange_currency SET status = 1");
 
-  // ── 17. Exchange — keep Binance as primary ─────────────────────────────────
+  // ── 17. Exchanges — KuCoin as primary (Binance is geo-blocked on Railway) ──
+  // Binance returns HTTP 451 from Railway's IP range even for public/no-key
+  // API calls. KuCoin has the same pairs, same ccxt interface, and no geo-block.
+  // If you later configure a Binance proxy in the admin Settings → Exchanges tab,
+  // flip this: UPDATE exchange SET status=0; UPDATE exchange SET status=1 WHERE name='binance'.
   console.log("[17] Exchanges");
-  await q("ensure binance is primary", "UPDATE exchange SET status = 1 WHERE name = 'binance'");
+  // Insert kucoin row if the seeder didn't run (idempotent via INSERT IGNORE)
+  await q("ensure kucoin row exists",
+    "INSERT IGNORE INTO exchange (id, name, title, description, type, status) VALUES (UUID(), 'kucoin', 'KuCoin', 'KuCoin exchange for spot trading with real-time market data, order execution, and balance management.', 'spot', 0)");
+  // Deactivate all, then activate kucoin only
+  await q("deactivate all exchanges", "UPDATE exchange SET status = 0");
+  await q("set kucoin as primary", "UPDATE exchange SET status = 1 WHERE name = 'kucoin'");
 
   // ── Done ───────────────────────────────────────────────────────────────────
   await conn.end();
