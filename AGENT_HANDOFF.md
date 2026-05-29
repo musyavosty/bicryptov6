@@ -288,6 +288,27 @@ Then manually update zero dates in that table.
 - Admin reviews and credits/processes manually from the admin panel.
 - Three options in each table: Bank Wire Transfer, SEPA, Crypto Transfer (Manual).
 
+### Ecosystem (on-chain) deposit tokens — fully seeded, waiting on Cassandra
+
+The ecosystem deposit system uses your RPC nodes directly — no KuCoin API keys needed.
+**Enabled tokens (15 total):**
+
+| Chain | Tokens | RPC used |
+|-------|--------|---------|
+| ETH | ETH (native), USDT (ERC-20), USDC (ERC-20) | Infura (`APP_ETH_RPC_URL`) |
+| BSC | BNB (native), USDT (BEP-20), USDC (BEP-20) | `APP_BSC_RPC_URL` |
+| TRON | TRX (native), USDT (TRC-20) — **added in hotfix-006** | TronGrid + `TRON_API_KEY` |
+| POLYGON | MATIC (native), USDT, USDC | `APP_POLYGON_RPC_URL` |
+| SOL | SOL (native), USDT (SPL), USDC (SPL) | `APP_SOL_RPC_URL` |
+| BTC | BTC (native) | mempool.space |
+
+**How it works once Cassandra is running:**
+1. Admin goes to **Admin → Ecosystem → Master Wallets** → creates one HD master wallet per chain
+2. Users navigate to their ECO wallet → unique custodial deposit address is derived from master wallet
+3. User sends crypto to their address → RPC node monitors chain → backend auto-credits balance
+
+**The only remaining blocker: Cassandra.** See Cassandra section above for the fix.
+
 ---
 
 ## Current state: what doesn't work yet
