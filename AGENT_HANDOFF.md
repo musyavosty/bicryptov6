@@ -211,6 +211,8 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 | `src/api/exchange/order/index.ws.js` | 56, 159, 207 | Full symbol for exchange_market lookup | 2026-05-07 | Same mismatch for spot WebSocket orders |
 | `src/api/admin/crm/user/[id]/index.put.js` | 85 | `=== "Super Admin"` → `["Super Admin","Admin"].includes(...)` | 2026-05-07 | Admin role couldn't change user roles from the UI |
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 206, 292, 293 | Fix CLUSTERING ORDER BY to include all clustering key columns | 2026-05-07 | ScyllaDB: "Clustering key columns must exactly match columns in CLUSTERING ORDER BY" → ecosystem tables never created |
+| `src/api/(ext)/admin/ecosystem/blockchain/[id]/status.put.js` | 56–70 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Backend checks for a `.lic` file before allowing blockchain enable → "License not activated" blocked all blockchain activation |
+| `src/api/admin/finance/exchange/provider/[id]/status.put.js` | 49–63 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Same license file check blocked enabling exchange providers with a `productId` |
 
 **ScyllaDB fix detail** (3 bugs in one file, applied 2026-05-07):
 1. `tradingViewQueries` — `orderbook_by_symbol` MV: Added `WITH CLUSTERING ORDER BY (price ASC, side ASC)` — was missing entirely.
@@ -305,7 +307,7 @@ failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmo
 ## Suggested next steps (in priority order)
 
 1. **Fix Cassandra** → follow the 6-step fix above → enables all ecosystem deposits.
-2. **Enable blockchains in admin panel** → after Cassandra is up.
+2. **Enable blockchains in admin panel** → after Cassandra is up. License check is bypassed ✅
 3. **Configure SMTP** → enables email verification, password reset.
 4. **Change superadmin password** → security hygiene.
 5. **Set up Stripe / PayPal** → fiat deposits.
