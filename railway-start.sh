@@ -311,6 +311,9 @@ node scripts/import-sql.js scripts/sql/hotfix-004-dedup-tables.sql || echo "WARN
 # hotfix-005: enable chart_engine extension, remove duplicate 30-min binary duration,
 # seed deposit_method and withdraw_method tables.
 node scripts/import-sql.js scripts/sql/hotfix-005-chart-engine-withdraw-methods.sql || echo "WARN: hotfix-005 had errors"
+# hotfix-006: enable ecosystem tokens (USDT/USDC/native on ETH/BSC/TRON/POLYGON/SOL/BTC),
+# insert missing TRON USDT TRC-20 token. Required for on-chain deposits via RPC nodes.
+node scripts/import-sql.js scripts/sql/hotfix-006-ecosystem-tokens.sql || echo "WARN: hotfix-006 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
