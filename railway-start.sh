@@ -298,6 +298,10 @@ node scripts/import-sql.js scripts/sql/hotfix-001-market-pairs.sql || echo "WARN
 # so sweep-phase2-forward.sql can INSERT binary market rows on a fresh DB.
 # initial.sql lacks these columns; Sequelize adds them later on backend boot — too late.
 node scripts/import-sql.js scripts/sql/hotfix-002-binary-columns.sql || echo "WARN: hotfix-002 had errors"
+# hotfix-003: deactivate all ETH-quoted exchange_market rows (KuCoin doesn't carry
+# XXX/ETH pairs). The processCurrenciesPrices CRON crashes on the first missing
+# symbol and blocks ALL price updates until fixed. Runs every boot — idempotent.
+node scripts/import-sql.js scripts/sql/hotfix-003-deactivate-eth-markets.sql || echo "WARN: hotfix-003 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
