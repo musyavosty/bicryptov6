@@ -98,34 +98,49 @@ before startup, which:
 - Sets `materialized_views_enabled: true` in cassandra.yaml
 - Sets `rpc_address: 0.0.0.0` so CQL is reachable across the Railway internal network
 
+### Current Railway state (as of 2026-05-29)
+
+The Cassandra service in Railway Project B is already configured:
+- Source: GitHub repo `musyavosty/bicryptov6`, Dockerfile: `Dockerfile.cassandra` ✅
+- Config file: `railway.cassandra.json` (no healthcheck, no start command) ✅
+- Env vars already set on the Cassandra service:
+  ```
+  CASSANDRA_RPC_ADDRESS=0.0.0.0
+  CASSANDRA_CLUSTER_NAME=demourinho
+  CASSANDRA_DC=datacenter1
+  HEAP_NEWSIZE=128M
+  MAX_HEAP_SIZE=512M
+  ```
+
+**Last known issue (2026-05-29):** Cassandra was starting but logging
+`Starting listening for CQL clients on localhost/127.0.0.1:9042` — meaning
+it was only reachable from inside its own container, not from the app.
+
+**Root cause found:** `scripts/cassandra-init.sh` was skipping the
+`rpc_address` sed-patch when `CASSANDRA_RPC_ADDRESS` env var was set, deferring
+to the Docker entrypoint — but the cassandra:4.1 Docker entrypoint does NOT
+reliably honor `CASSANDRA_RPC_ADDRESS`. Fixed in this session (2026-05-29):
+the init script now ALWAYS patches `rpc_address: 0.0.0.0` unconditionally and
+also force-exports the env var before calling the entrypoint.
+
 ### How to apply the fix (Railway agent or manual)
 
-**Step 1 — Update the Cassandra service source**
+**Step 1 — Redeploy the Cassandra service**
 
-In Railway → Project B → `scylladb-railway` service → Settings → Build:
-- Change source from Docker Image (`cassandra:4.1`) to **GitHub repo**
-- Repo: `musyavosty/bicryptov6`
-- Dockerfile path: `Dockerfile.cassandra`
-
-**Step 2 — Add env vars to the Cassandra service** (not the app service)
-```
-CASSANDRA_RPC_ADDRESS=0.0.0.0
-CASSANDRA_CLUSTER_NAME=demourinho
-CASSANDRA_DC=datacenter1
-HEAP_NEWSIZE=128M
-MAX_HEAP_SIZE=512M
-```
-
-**Step 3 — Redeploy Cassandra**
+The code fix is already pushed to GitHub. Just trigger a redeploy of the
+`scylladb-railway` service in Railway → Project B. Railway will pull the
+updated `scripts/cassandra-init.sh` and rebuild the image.
 
 Wait for it to be healthy. Look for these lines in the Cassandra logs:
 ```
 [CASSANDRA-INIT] materialized_views_enabled: true
-[CASSANDRA-INIT] rpc_address: 0.0.0.0
+[CASSANDRA-INIT] rpc_address: 0.0.0.0 (patched in yaml)
 Starting listening for CQL clients on /0.0.0.0:9042
 ```
 
 Do NOT proceed until you see `0.0.0.0:9042` (not `127.0.0.1:9042`).
+If you still see `127.0.0.1:9042`, also add `CASSANDRA_LISTEN_ADDRESS=0.0.0.0`
+to the Cassandra service env vars and redeploy again.
 
 **Step 4 — Verify SCYLLA_CONNECT_POINTS on the app service**
 
