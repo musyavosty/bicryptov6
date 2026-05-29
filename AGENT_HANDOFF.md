@@ -119,12 +119,12 @@ The Cassandra service in Railway Project B is already configured:
 entrypoint which does NOT reliably honor that env var. Fixed: the init script now
 ALWAYS patches `rpc_address: 0.0.0.0` unconditionally AND force-exports the env var.
 
-**Bug B — `broadcast_rpc_address: 0.0.0.0` is INVALID:** Cassandra 4.x requires
-`broadcast_rpc_address` to be a real routable IP when `rpc_address=0.0.0.0`.
-Setting it to `0.0.0.0` (as the previous `Dockerfile.cassandra` RUN line did) is invalid
-and can prevent Cassandra from binding correctly. Fixed: the build-time line was removed;
-`cassandra-init.sh` now dynamically sets `broadcast_rpc_address` to `$(hostname -i)` at
-container startup.
+**Bug B — `rpc_address: 0.0.0.0` requires `broadcast_rpc_address` = real IP (unsettable statically):**
+Cassandra 4.x crashes if `rpc_address=0.0.0.0` and `broadcast_rpc_address` is unset or also `0.0.0.0`.
+The container IP isn't known at deploy time, so `broadcast_rpc_address` can't be set as a static Railway env var.
+**Final fix (2026-05-29):** switched to `rpc_interface: eth0` — binds CQL to the container's actual
+eth0 IP without needing `broadcast_rpc_address` at all. `cassandra-init.sh` also `unset CASSANDRA_RPC_ADDRESS`
+so the Docker entrypoint doesn't override back to `0.0.0.0`.
 
 **Bug C — app gave up before Cassandra was ready:** `MAX_RETRIES=5` + `INITIAL_DELAY=2000ms`
 meant the app exhausted all retries in ~64 seconds. Cassandra takes 60–90s to start, so the
