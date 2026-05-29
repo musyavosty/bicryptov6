@@ -289,6 +289,15 @@ echo "Populating market metadata (exchange_market + futures_market)..."
 node scripts/populate-market-metadata.js || echo "WARN: metadata population failed — binary/spot orders may reject."
 echo "Market metadata done."
 
+# -------- Full feature activation (always runs — idempotent) --------
+# Enables all extensions, settings, markets, staking pools, investment plans,
+# P2P methods, forex/AI plans, KYC levels, and ecosystem blockchains.
+# Safe to run on every boot — uses INSERT IGNORE and ON DUPLICATE KEY UPDATE.
+echo "Running full feature activation..."
+MYSQL_URL="mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}" \
+  node scripts/activate-all.js || echo "WARN: activate-all had errors (non-fatal)"
+echo "Feature activation done."
+
 # -------- Start the app --------
 echo "Starting backend (port ${BACKEND_PORT:-4000}) + frontend (port ${PORT:-3000}) under PM2..."
 exec npx pm2-runtime start production.config.js --env production
