@@ -318,6 +318,10 @@ node scripts/import-sql.js scripts/sql/hotfix-006-ecosystem-tokens.sql || echo "
 # KuCoin renamed MATIC to POL — MATIC/USDT is gone from KuCoin. Without this, the
 # processCurrenciesPrices CRON crashes every 2 minutes and blocks ALL price updates.
 node scripts/import-sql.js scripts/sql/hotfix-007-deactivate-matic.sql || echo "WARN: hotfix-007 had errors"
+# hotfix-008: deactivate MATIC in futures_market (same KuCoin rename crash as hotfix-007
+# but for the futures price cron), add BTC to exchange_currency (price cron was missing
+# BTC entirely), deactivate MATIC staking pool (no live price → UI errors).
+node scripts/import-sql.js scripts/sql/hotfix-008-futures-btc-staking.sql || echo "WARN: hotfix-008 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
