@@ -6,8 +6,7 @@ YAML=/etc/cassandra/cassandra.yaml
 echo "[CASSANDRA-INIT] Patching cassandra.yaml before startup..."
 
 # ── Fix 1: Enable materialized views ─────────────────────────────────────────
-# Cassandra 4.1 ships with materialized views disabled (commented out).
-# The app's ecosystem extension requires them to create orderbook/candle tables.
+# Cassandra 4.1 ships with materialized views disabled. The app requires them.
 if grep -q "^# materialized_views_enabled:" "$YAML" 2>/dev/null; then
     sed -i 's/^# materialized_views_enabled:.*/materialized_views_enabled: true/' "$YAML"
     echo "[CASSANDRA-INIT] materialized_views_enabled: true (was commented out)"
@@ -19,49 +18,34 @@ else
     echo "[CASSANDRA-INIT] materialized_views_enabled: true (appended)"
 fi
 
-# ── Fix 2: Bind CQL to all interfaces ────────────────────────────────────────
-# ALWAYS patch rpc_address unconditionally — do NOT rely on CASSANDRA_RPC_ADDRESS
-# env var alone. The cassandra:4.1 Docker entrypoint does not reliably honor it
-# (confirmed: Cassandra still showed 127.0.0.1:9042 with env var set).
-# Belt-and-suspenders: sed the yaml directly AND force-export the env var so
-# docker-entrypoint.sh also sees it.
+# ── Fix 2: Use rpc_interface: eth0 to bind CQL to the container's real IP ────
+#
+# APPROACH: rpc_interface: eth0 is better than rpc_address: 0.0.0.0 because:
+#   - rpc_address: 0.0.0.0 requires broadcast_rpc_address to be a real IP
+#   - broadcast_rpc_address can't be set statically (we don't know the IP at deploy time)
+#   - rpc_interface: eth0 binds CQL to whatever IP eth0 has — no broadcast addr needed
+#
+# OVERRIDE CASSANDRA_RPC_ADDRESS: if the Railway env var CASSANDRA_RPC_ADDRESS is
+# set to 0.0.0.0 (which triggers the crash), we neutralize it here so the
+# docker-entrypoint.sh doesn't re-set rpc_address: 0.0.0.0 in the yaml.
+unset CASSANDRA_RPC_ADDRESS
+
+# Ensure rpc_address is commented out and rpc_interface: eth0 is present.
+# (The Dockerfile already does this at build time; this is belt-and-suspenders.)
 if grep -q "^rpc_address:" "$YAML" 2>/dev/null; then
-    sed -i 's/^rpc_address:.*/rpc_address: 0.0.0.0/' "$YAML"
-    echo "[CASSANDRA-INIT] rpc_address: 0.0.0.0 (patched in yaml)"
-elif grep -q "^# rpc_address:" "$YAML" 2>/dev/null; then
-    sed -i 's/^# rpc_address:.*/rpc_address: 0.0.0.0/' "$YAML"
-    echo "[CASSANDRA-INIT] rpc_address: 0.0.0.0 (was commented, patched)"
-else
-    echo "rpc_address: 0.0.0.0" >> "$YAML"
-    echo "[CASSANDRA-INIT] rpc_address: 0.0.0.0 (appended)"
+    sed -i 's/^rpc_address:.*$/# rpc_address: disabled (using rpc_interface)/' "$YAML"
+    echo "[CASSANDRA-INIT] rpc_address: commented out"
 fi
-
-# Force env var so docker-entrypoint also uses it (belt + suspenders)
-export CASSANDRA_RPC_ADDRESS=0.0.0.0
-
-# ── Fix 3: Set broadcast_rpc_address to the container's real IP ──────────────
-# Cassandra 4.x REQUIRES broadcast_rpc_address to be a real IP (not 0.0.0.0)
-# when rpc_address is 0.0.0.0. Without this, Cassandra either refuses to start
-# or advertises an unreachable address to clients. We resolve the container's
-# actual IP at runtime using hostname -i.
-ACTUAL_IP=$(hostname -i 2>/dev/null | awk '{print $1}')
-if [ -n "$ACTUAL_IP" ]; then
-    if grep -q "^broadcast_rpc_address:" "$YAML" 2>/dev/null; then
-        sed -i "s/^broadcast_rpc_address:.*/broadcast_rpc_address: ${ACTUAL_IP}/" "$YAML"
-        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (patched)"
-    elif grep -q "^# broadcast_rpc_address:" "$YAML" 2>/dev/null; then
-        sed -i "s/^# broadcast_rpc_address:.*/broadcast_rpc_address: ${ACTUAL_IP}/" "$YAML"
-        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (was commented, patched)"
-    else
-        echo "broadcast_rpc_address: ${ACTUAL_IP}" >> "$YAML"
-        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (appended)"
-    fi
-    export CASSANDRA_BROADCAST_RPC_ADDRESS="${ACTUAL_IP}"
+if grep -q "^rpc_interface:" "$YAML" 2>/dev/null; then
+    echo "[CASSANDRA-INIT] rpc_interface already set: $(grep '^rpc_interface:' $YAML)"
 else
-    echo "[CASSANDRA-INIT] WARN: could not determine container IP for broadcast_rpc_address"
+    echo "rpc_interface: eth0" >> "$YAML"
+    echo "[CASSANDRA-INIT] rpc_interface: eth0 (appended)"
 fi
 
 echo "[CASSANDRA-INIT] Done. Handing off to Cassandra entrypoint..."
+echo "[CASSANDRA-INIT] rpc_interface line: $(grep '^rpc_interface:' $YAML || echo 'NOT FOUND')"
+echo "[CASSANDRA-INIT] materialized_views line: $(grep '^materialized_views_enabled:' $YAML || echo 'NOT FOUND')"
 
 # Hand off to the official Docker entrypoint (handles data dir init, etc.)
 exec /usr/local/bin/docker-entrypoint.sh "$@"
