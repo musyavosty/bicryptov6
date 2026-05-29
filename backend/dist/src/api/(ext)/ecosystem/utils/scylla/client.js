@@ -22,7 +22,7 @@ const clientConfig = {
         loadBalancing: loadBalancingPolicy,
     },
     socketOptions: {
-        connectTimeout: 2000,
+        connectTimeout: 15000,
     },
     pooling: {
         coreConnectionsPerHost: {
@@ -41,8 +41,8 @@ if (scyllaUsername &&
     clientConfig.authProvider = new cassandra_driver_1.auth.PlainTextAuthProvider(scyllaUsername, scyllaPassword);
 }
 const client = new cassandra_driver_1.Client(clientConfig);
-const MAX_RETRIES = 5;
-const INITIAL_DELAY = 2000;
+const MAX_RETRIES = 20;
+const INITIAL_DELAY = 15000;
 async function connectWithRetry(retries, delay) {
     if (retries === MAX_RETRIES) {
         await new Promise((resolve) => setTimeout(resolve, INITIAL_DELAY));
