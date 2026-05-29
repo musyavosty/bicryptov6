@@ -112,16 +112,25 @@ The Cassandra service in Railway Project B is already configured:
   MAX_HEAP_SIZE=512M
   ```
 
-**Last known issue (2026-05-29):** Cassandra was starting but logging
-`Starting listening for CQL clients on localhost/127.0.0.1:9042` — meaning
-it was only reachable from inside its own container, not from the app.
+**Fixed (2026-05-29 — three bugs):**
 
-**Root cause found:** `scripts/cassandra-init.sh` was skipping the
-`rpc_address` sed-patch when `CASSANDRA_RPC_ADDRESS` env var was set, deferring
-to the Docker entrypoint — but the cassandra:4.1 Docker entrypoint does NOT
-reliably honor `CASSANDRA_RPC_ADDRESS`. Fixed in this session (2026-05-29):
-the init script now ALWAYS patches `rpc_address: 0.0.0.0` unconditionally and
-also force-exports the env var before calling the entrypoint.
+**Bug A — `rpc_address` not taking effect:** `cassandra-init.sh` was skipping the
+`rpc_address` patch when `CASSANDRA_RPC_ADDRESS` was set, deferring to the Docker
+entrypoint which does NOT reliably honor that env var. Fixed: the init script now
+ALWAYS patches `rpc_address: 0.0.0.0` unconditionally AND force-exports the env var.
+
+**Bug B — `broadcast_rpc_address: 0.0.0.0` is INVALID:** Cassandra 4.x requires
+`broadcast_rpc_address` to be a real routable IP when `rpc_address=0.0.0.0`.
+Setting it to `0.0.0.0` (as the previous `Dockerfile.cassandra` RUN line did) is invalid
+and can prevent Cassandra from binding correctly. Fixed: the build-time line was removed;
+`cassandra-init.sh` now dynamically sets `broadcast_rpc_address` to `$(hostname -i)` at
+container startup.
+
+**Bug C — app gave up before Cassandra was ready:** `MAX_RETRIES=5` + `INITIAL_DELAY=2000ms`
+meant the app exhausted all retries in ~64 seconds. Cassandra takes 60–90s to start, so the
+app almost always hit max retries before a single connection attempt could succeed. Fixed:
+`MAX_RETRIES=20`, `INITIAL_DELAY=15000ms`, `connectTimeout=15000ms` — app now waits up to
+~10 minutes for Cassandra before giving up (dist patch in `client.js`).
 
 ### How to apply the fix (Railway agent or manual)
 
@@ -247,6 +256,8 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 206, 292, 293 | Fix CLUSTERING ORDER BY to include all clustering key columns | 2026-05-07 | ScyllaDB: "Clustering key columns must exactly match columns in CLUSTERING ORDER BY" → ecosystem tables never created |
 | `src/api/(ext)/admin/ecosystem/blockchain/[id]/status.put.js` | 56–70 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Backend checks for a `.lic` file before allowing blockchain enable → "License not activated" blocked all blockchain activation |
 | `src/api/admin/finance/exchange/provider/[id]/status.put.js` | 49–63 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Same license file check blocked enabling exchange providers with a `productId` |
+| `src/api/(ext)/ecosystem/utils/scylla/client.js` | 25 | `connectTimeout: 2000` → `connectTimeout: 15000` | 2026-05-29 | 2s connect timeout was too short for cross-container Railway connection |
+| `src/api/(ext)/ecosystem/utils/scylla/client.js` | 47–48 | `MAX_RETRIES: 5→20`, `INITIAL_DELAY: 2000→15000` | 2026-05-29 | App gave up after ~64s total; Cassandra takes 60–90s to start → always hit max retries |
 
 **ScyllaDB fix detail** (3 bugs in one file, applied 2026-05-07):
 1. `tradingViewQueries` — `orderbook_by_symbol` MV: Added `WITH CLUSTERING ORDER BY (price ASC, side ASC)` — was missing entirely.
