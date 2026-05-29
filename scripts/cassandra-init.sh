@@ -17,7 +17,46 @@ else
     echo "[CASSANDRA-INIT] materialized_views_enabled: true (appended)"
 fi
 
-# ── Fix 2: Detect real IPv4 address and set rpc/listen addresses ──────────────
+# ── Fix 2: Force conservative heap to prevent OOM kills ───────────────────────
+#
+# Railway containers have limited RAM. A 512M JVM heap + JVM overhead (~200MB)
+# easily exceeds available container memory → silent OOM kill → crash loop.
+# Force 128M max heap so Cassandra survives in constrained environments.
+# Performance is reduced but stability is guaranteed.
+export MAX_HEAP_SIZE="128M"
+export HEAP_NEWSIZE="32M"
+echo "[CASSANDRA-INIT] Heap forced to MAX_HEAP_SIZE=128M HEAP_NEWSIZE=32M (OOM prevention)"
+
+# ── Fix 3: Wipe stale gossip/system state on every boot ──────────────────────
+#
+# Each Railway deploy may get a new container IP. Cassandra saves its old IP
+# in the system keyspace gossip tables. On restart with a new IP, Cassandra
+# tries to reconcile the ring state and can crash or get stuck in bootstrap.
+#
+# SAFE to wipe because:
+#   - This is a single-node deployment (no cluster peers)
+#   - The app recreates trading/futures keyspaces on every connect
+#   - Only system-level metadata is cleared; user data in trading/ and futures/
+#     subdirectories inside /var/lib/cassandra/data/ is NOT touched
+#
+DATA_DIR=/var/lib/cassandra
+
+# Wipe gossip/token tables inside the system keyspace (NOT application data)
+for SYS_TABLE in peers peers_v2 peer_events peer_events_v2 local; do
+    rm -rf "${DATA_DIR}/data/system/${SYS_TABLE}-"* 2>/dev/null || true
+done
+
+# Wipe system_schema so Cassandra rebuilds it fresh (app recreates via CQL)
+rm -rf "${DATA_DIR}/data/system_schema" 2>/dev/null || true
+
+# Wipe commitlog and hints (safe on single-node; no replica to hint)
+rm -rf "${DATA_DIR}/commitlog"/* 2>/dev/null || true
+rm -rf "${DATA_DIR}/hints"/* 2>/dev/null || true
+rm -rf "${DATA_DIR}/saved_caches"/* 2>/dev/null || true
+
+echo "[CASSANDRA-INIT] Stale gossip/system state cleared (trading/futures data preserved)"
+
+# ── Fix 4: Detect real IPv4 address and set rpc/listen addresses ──────────────
 #
 # Cassandra runs with -Djava.net.preferIPv4Stack=true so IPv6 addresses are
 # rejected. Every detection method below filters to IPv4-only.
