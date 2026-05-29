@@ -28,7 +28,6 @@ instead of working in the original one. Both projects exist and share the same G
 - All RPC and API keys already set (see env vars section below)
 
 **The next agent should work in Project B** — it has all the keys configured.
-The only remaining blocker is Cassandra (see fix below).
 
 ---
 
@@ -72,6 +71,27 @@ SCYLLA_KEYSPACE=trading
 SCYLLA_FUTURES_KEYSPACE=futures
 SCYLLA_DATACENTER=datacenter1
 ```
+
+### Missing env vars that unlock additional functionality
+
+Add these to Railway → Variables for the `demourinho-crypto` service to enable the
+corresponding features. None of these are strictly required for the platform to boot
+and run trading, but they enable deposits, withdrawals, and other advanced features.
+
+| Variable | Purpose | Where to get it |
+|----------|---------|----------------|
+| `APP_KUCOIN_API_KEY` | Crypto spot deposits (deposit addresses), crypto withdrawals | KuCoin → API Management → Create API |
+| `APP_KUCOIN_API_SECRET` | Same — all three must be set together | Same |
+| `APP_KUCOIN_API_PASSPHRASE` | Same — all three must be set together | Same |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Email (signup confirmation, password reset) | Your email provider |
+| `APP_EMAILER` | Set to `smtp` to enable email sending | — |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Fiat deposits via Stripe | stripe.com |
+| `OPENAI_API_KEY` or `GEMINI_API_KEY` | AI features (trading bots, AI investment) | openai.com / google.com |
+
+**Without KuCoin API keys**: Tickers, price charts, spot/binary/futures trading all work
+(public API requires no keys). Only deposit address generation and crypto withdrawal
+processing fail. The platform stays live but users must deposit via manual bank transfer
+or admin-credited wallets.
 
 ---
 
@@ -234,63 +254,100 @@ Then manually update zero dates in that table.
 
 ---
 
-## Current state: what works (Project B, as of 2026-05-29)
+## Current state: what works (as of 2026-05-29)
 
-### Fully activated via activate-all.js (2026-05-29)
+### Trading and price feeds — fully working, NO API keys required
 
-- **All 18 extensions** enabled: p2p, staking, ico, futures, copy_trading, gateway,
-  ai_market_maker, trading_bot, nft, mailwizard, forex, ai_investment, ecommerce,
-  knowledge_base, mlm, binary_ai_engine, wallet_connect, ecosystem.
-- **45 settings** written/updated — all features on, KYC optional, withdrawals auto-approved.
-- **Spot trading**: 88 active pairs (23 original + 65 new: SHIB, PEPE, WIF, TON, SUI, APT,
-  INJ, TIA, FLOKI, BONK, LDO, RNDR, FET, WLD, ORDI, AAVE, MKR, COMP, DYDX, GMX,
-  ZEC, XMR, DASH, ETC, XLM, ALGO, VET, THETA, FTM, HBAR, ICP, FLOW, MINA, SAND,
-  MANA, AXS, GALA, CHZ, BLUR, PYTH, + 20 more/USDT + BTC/ETH).
-- **Binary options**: 36 markets (8 original + 28 new). 15 durations total (7 original +
-  8 new: 30s, 2/10/20/45/120/480/1440 min).
-- **Futures**: 40 markets (8 original + 32 new: ARB, OP, TON, SUI, APT, INJ, SEI,
-  PEPE, WIF, FTM, NEAR, SHIB, FIL, LDO, IMX, STX, HBAR, ICP, FET, WLD, ETC,
-  RNDR, TIA, ORDI + more).
-- **Investment plans**: 10 total (3 original Bronze/Silver/Gold + 7 new:
-  Starter/Platinum/Diamond + Crypto Bronze/Silver/Gold/Platinum).
-  14 durations. All 90 plan×duration combinations linked.
-- **Staking pools**: 14 total (4 original + 10 new:
-  USDC, BNB, XRP, ADA, DOT, SOL, AVAX, MATIC, ATOM, LINK).
-- **P2P payment methods**: 26 total (6 original + 20 new: Skrill, Neteller, WebMoney,
-  Perfect Money, Zelle, Venmo, CashApp, Alipay, WeChat Pay, M-Pesa, Pix, UPI,
-  GCash, Paytm, GrabPay, Bkash, OrangeMonkey, BTC/ETH/BNB on-chain).
-- **Forex plans**: 5 new (Micro/Mini/Standard/Pro/VIP Forex). 6 durations.
-- **AI Investment plans**: 4 new (Starter/Growth/Pro/Elite).
-- **KYC levels**: 3 seeded (Basic / Standard / Advanced) with field configs and trade limits.
-- **60 fiat currencies** enabled (USD, EUR, GBP, JPY, AUD + 55 more).
-- **Ecosystem blockchains**: all 4 existing rows enabled (TRON, TON, XMR, SOL).
-- **All exchange currencies** activated.
-- **Charts**: Live Binance data via ccxt (public mode, no API key). 99–146 candles per request.
-- **BTC deposits**: mempool.space scanner — no key needed. ✅
-- **Admin panel**: Super Admin has full access.
-- **Exchange**: Binance (primary) + KuCoin both active.
-- **RPC endpoints**: BSC, Polygon, Solana, Tron, ETH (Infura) — all set ✅
-- **TronGrid API key**: set ✅
-- **OpenExchangeRates**: set ✅
+- **Live tickers & charts**: KuCoin public API (ccxt public mode). No keys needed.
+  Prices update in real-time on spot, futures, and binary markets.
+- **Spot trading**: 24 active markets (23 /USDT pairs + ETH/BTC + SOL/BTC).
+  ETH-quoted pairs deactivated because KuCoin doesn't carry them.
+- **Futures trading**: 9 active markets (BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX/USDC).
+- **Binary options**: 36 markets, 14 durations (1/2/3/5/10/15/20/30/45/60/120/240/480/1440 min).
+  Profit range 60–85%.
+
+### Fully activated via activate-all.js (19 sections)
+
+- **19 extensions** enabled: includes `chart_engine` (fixed in hotfix-005 — was disabled).
+- **45+ settings** written/updated — all features on, KYC optional, withdrawals auto-approved.
+- **Investment plans**: 10 plans × 14 durations = 90 combinations all linked.
+- **Staking pools**: 14 pools (BTC/ETH/USDT/SOL/USDC/BNB/XRP/ADA/DOT/AVAX/MATIC/ATOM/LINK/FIL).
+- **P2P payment methods**: 26 methods including global options (Zelle, Venmo, Alipay, UPI etc.).
+- **Forex plans**: 5 plans (Micro/Mini/Standard/Pro/VIP).
+- **AI Investment plans**: 4 plans (Starter/Growth/Pro/Elite).
+- **KYC levels**: 3 (Basic/Standard/Advanced) with field configs and trade limits.
+- **60 fiat currencies** enabled.
+- **Ecosystem blockchains**: 4 enabled (TRON, TON, XMR, SOL) — pending Cassandra for on-chain.
+- **Fiat deposit methods**: 3 seeded (Bank Wire, SEPA, Crypto Manual).
+- **Fiat withdraw methods**: 3 seeded (Bank Wire, SEPA, Crypto Manual).
+
+### Manual fiat deposit/withdrawal flow (no API keys needed)
+
+- Users can go to **Finance → Deposit → Fiat** and submit payment proof for manual deposits.
+- Users can go to **Finance → Withdraw → Fiat** to request a manual bank/crypto withdrawal.
+- Admin reviews and credits/processes manually from the admin panel.
+- Three options in each table: Bank Wire Transfer, SEPA, Crypto Transfer (Manual).
+
+---
 
 ## Current state: what doesn't work yet
 
-### Ecosystem deposits (ETH, BNB, TRON, SOL, MATIC)
-Blocked by Cassandra not connecting. Fix is above.
+### Crypto USDT deposits via exchange (requires KuCoin API keys)
+
+The spot deposit flow uses the exchange API to fetch a unique deposit address from KuCoin
+and monitor incoming transactions. Without API keys, the backend falls back to **public mode**
+(tickers work) but deposit address generation fails — users see no address in the wallet UI.
+
+**Fix**: Add these 3 env vars to Railway → Variables on the `demourinho-crypto` service:
+```
+APP_KUCOIN_API_KEY=<your KuCoin API key>
+APP_KUCOIN_API_SECRET=<your KuCoin API secret>
+APP_KUCOIN_API_PASSPHRASE=<your KuCoin passphrase>
+```
+
+The KuCoin API key needs **"General"** permissions only (read + deposit address generation).
+For withdrawal processing, also enable **"Trade"** permissions.
+
+After adding, redeploy the service. The exchange manager will detect the keys and switch
+to authenticated mode automatically. Deposit addresses will appear in user wallets.
+
+### Crypto USDT withdrawals via exchange (requires same KuCoin API keys)
+
+Same dependency. Spot withdrawals call `exchange.withdraw()` which requires authenticated
+mode. Without keys, spot withdrawals are rejected. The **fiat/manual withdrawal flow**
+(Finance → Withdraw → Fiat) works independently of API keys.
+
+### Ecosystem deposits (ETH, BNB, TRON, SOL, MATIC on-chain)
+
+Blocked by Cassandra not connecting. Fix described in the Cassandra section above.
+This is the OTHER deposit path: uses RPC nodes + Cassandra, no exchange API keys needed.
 
 ### Email sending
-No SMTP credentials. Signup confirmation, password resets don't send.
-Fix: add `APP_EMAILER=smtp` + SMTP credentials to Railway env vars.
+
+No SMTP credentials. Signup confirmation, password resets, and notifications don't send.
+Fix: add `APP_EMAILER=smtp` + `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` to Railway.
 
 ### Fiat payments (Stripe / PayPal)
-Not configured.
+
+Not configured. Set `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` for card deposits.
 
 ### AI features
-Set `OPENAI_API_KEY` or `GEMINI_API_KEY`.
 
-### FX rate cron (minor)
-`APP_OPENEXCHANGERATES_APP_ID` is set to a free demo key. If it hits the 1000 req/month limit,
-replace with your own from openexchangerates.org/signup/free.
+Set `OPENAI_API_KEY` or `GEMINI_API_KEY` for AI trading bots and AI investment.
+
+---
+
+## All hotfixes applied (in order)
+
+All hotfix SQL files are in `scripts/sql/` and run automatically in `railway-start.sh`.
+
+| Hotfix | What it does |
+|--------|-------------|
+| `hotfix-001-market-pairs.sql` | Strips full symbols (BTC/USDT → BTC) in `exchange_market.pair` |
+| `hotfix-002-binary-columns.sql` | Adds `minAmount`/`maxAmount` columns to `binary_market` |
+| `hotfix-003-deactivate-eth-markets.sql` | Deactivates all ETH-quoted `exchange_market` rows (KuCoin doesn't carry them) |
+| `hotfix-004-dedup-tables.sql` | Deduplicates exchange/binary_duration/staking_pools, inserts 27 missing binary markets |
+| `hotfix-005-chart-engine-withdraw-methods.sql` | Enables chart_engine, removes 30min/70% duplicate duration, seeds deposit/withdraw methods |
 
 ---
 
@@ -309,61 +366,30 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 | `src/api/admin/finance/exchange/provider/[id]/status.put.js` | 49–63 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Same license file check blocked enabling exchange providers with a `productId` |
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 25 | `connectTimeout: 2000` → `connectTimeout: 15000` | 2026-05-29 | 2s connect timeout was too short for cross-container Railway connection |
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 47–48 | `MAX_RETRIES: 5→20`, `INITIAL_DELAY: 2000→15000` | 2026-05-29 | App gave up after ~64s total; Cassandra takes 60–90s to start → always hit max retries |
-| `src/utils/exchange.js` | 141–152 | Public/no-key mode now fetches `proxyUrl` from DB before creating ccxt instance (was hardcoded to `httpsAgentIPv4`) | 2026-05-29 | Public mode silently ignored the `proxyUrl` DB field — admin-configured proxy had no effect without API keys |
-
-**ScyllaDB fix detail** (3 bugs in one file, applied 2026-05-07):
-1. `tradingViewQueries` — `orderbook_by_symbol` MV: Added `WITH CLUSTERING ORDER BY (price ASC, side ASC)` — was missing entirely.
-2. `futuresViewQueries` — `orderbook_by_symbol` MV: Same fix.
-3. `futuresViewQueries` — `positions_by_symbol` MV: Changed `(id ASC)` → `(id ASC, "userId" ASC)`.
+| `src/utils/exchange.js` | 141–152 | Public/no-key mode now fetches `proxyUrl` from DB before creating ccxt instance | 2026-05-29 | Public mode silently ignored the `proxyUrl` DB field — admin-configured proxy had no effect without API keys |
 
 ---
 
-## Database state (Project B, as of 2026-05-28)
+## Database state (Project A live DB, as of 2026-05-29)
 
-184 tables total (160 from initial.sql + 24 added by Sequelize model sync on first boot).
+183 tables total.
 
 | Table | Rows | Notes |
 |-------|------|-------|
-| `exchange_market` | 23 | 19 active (status=1), 4 disabled. All have `metadata` populated. |
-| `futures_market` | 8 | All active, metadata populated. BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX. |
-| `binary_market` | 8 | All active. minAmount=1, maxAmount=10000. BTC/ETH/SOL/XRP/BNB/ADA/DOGE/MATIC. |
-| `binary_duration` | 7 | 1/3/5/15/30/60/240 min. Profit: 80/78/75/72/70/68/65%. |
-| `investment_plan` | 3 | Bronze ($100-1k, 9%), Silver ($1k-10k, 15%), Gold ($10k-100k, 23%). |
-| `investment_duration` | 3 | 30/60/90 DAY. |
-| `staking_pools` | 4 | BTC Flexible 5%APR, ETH 30-Day 8%, USDT Stable 12%, SOL High-Yield 15%. |
-| `p2p_payment_methods` | 6 | Bank Transfer, Wise, PayPal, Revolut, Cash, Crypto USDT. |
-| `nft_category` | 6 | Art, Collectibles, Gaming, Music, Photography, Sports. |
-| `ecommerce_category` | 5 | E-Books, Courses, Indicators, Templates, Reports. |
-| `role` | 4 | Super Admin (52), Admin (53), Support (54), User (55) |
-| `exchange` | 3 | binance (active), kucoin (active), xt (disabled) |
-| `ecosystem_blockchain` | 4 | TRON, TON, XMR, SOL — all status=0 (enable via admin panel after Cassandra is up) |
-
-**settings keys of note:**
-- `binaryStatus=true` — binary trading live
-- `binaryPracticeStatus=true` — demo mode enabled
-- `defaultExchange=binance` — primary exchange
-- `binarySettings` — full JSON config with all order types enabled
-
-**Missing**: `blockchain` table does not exist in this schema. Use `ecosystem_blockchain`.
-
----
-
-## Boot timing
-
-Backend takes **8–10 minutes** to start on Railway (184 tables → Sequelize ALTER TABLE
-sync takes 8+ minutes). Health check timeout is 600s. If it takes longer than 10 minutes,
-the health check fails and Railway marks the deploy unhealthy. This should stabilise once
-the schema stops changing (no more ALTER TABLEs to run).
-
-Do not lower the health check timeout.
-
----
-
-## Boot issue fixed: binary_market missing columns
-
-On the first-ever deploy with a fresh DB, the phase 2 sweep (`sweep-phase2-forward.sql`)
-failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmount` columns.
-`hotfix-002-binary-columns.sql` now runs before the sweep and adds these columns.
+| `exchange_market` | 24 | 23 active (status=1). LINK/ETH deactivated (KuCoin doesn't carry it). All have `metadata` populated. |
+| `futures_market` | 9 | All active, metadata populated. |
+| `binary_market` | 36 | All active. minAmount=1, maxAmount=10000. 8 original + 28 added by activate-all. |
+| `binary_duration` | 14 | Clean: 1/2/3/5/10/15/20/30/45/60/120/240/480/1440 min. No duplicates. |
+| `investment_plan` | 10 | Bronze/Silver/Gold + 7 new plans. |
+| `investment_duration` | 14 | All linked to plans (90 combos). |
+| `staking_pool` | 14 | 4 original + 10 new currencies. |
+| `p2p_payment_methods` | 26 | 6 original + 20 global. |
+| `deposit_method` | 3 | Bank Wire, SEPA, Crypto Manual. (fiat/manual deposits) |
+| `withdraw_method` | 3 | Bank Wire, SEPA, Crypto Manual. (fiat/manual withdrawals) |
+| `extension` | 19 | ALL enabled including chart_engine (fixed in hotfix-005). |
+| `exchange` | 1 | kucoin only (status=1). Binance is geo-blocked on Railway. |
+| `ecosystem_blockchain` | 4 | TRON/TON/XMR/SOL all status=1. |
+| `role` | 4 | Super Admin (52), Admin (53), Support (54), User (55). |
 
 ---
 
@@ -372,15 +398,13 @@ failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmo
 | File | Purpose |
 |------|---------|
 | `railway-start.sh` | Boot script — runs on every Railway deploy |
-| `scripts/activate-all.js` | Full feature activation — runs on every Railway boot (idempotent) |
+| `scripts/activate-all.js` | Full feature activation (19 sections) — runs on every Railway boot, idempotent |
+| `scripts/sql/hotfix-*.sql` | Idempotent data fixes, run in order by railway-start.sh |
 | `Dockerfile.cassandra` | Custom Cassandra image with materialized views + rpc_address fix |
-| `scripts/cassandra-init.sh` | Init script called by Dockerfile.cassandra before Cassandra starts |
-| `scripts/populate-market-metadata.js` | Idempotent — populates exchange/futures metadata |
+| `scripts/cassandra-init.sh` | Init script: sets heap, wipes stale gossip, detects IP |
+| `scripts/populate-market-metadata.js` | Idempotent — populates exchange/futures market metadata |
 | `scripts/sql/sweep-forward.sql` | Activates exchanges, inserts market rows |
 | `scripts/sql/sweep-phase2-forward.sql` | Binary markets, futures, investment plans, etc. |
-| `scripts/sql/hotfix-001-market-pairs.sql` | Strips full pair symbols in exchange_market |
-| `scripts/sql/hotfix-002-binary-columns.sql` | Adds minAmount/maxAmount to binary_market |
-| `scripts/sql/hotfix-003-deactivate-eth-markets.sql` | Deactivates all ETH-quoted exchange_market rows (KuCoin doesn't carry them) |
 | `production.config.js` | PM2 app definitions |
 | `backend/dist/src/api/` | Compiled API routes — surgical edits only |
 
@@ -392,22 +416,25 @@ failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmo
   Any backend change must be a surgical single-line edit to the compiled file.
 - **Frontend is full Next.js source** — edit freely.
 - **MySQL only** — do not use PostgreSQL.
-- **Binance is geo-blocked on Replit** — ccxt calls to Binance fail on Replit servers.
-  Any script calling Binance must run on Railway. Use hardcoded specs in
-  `scripts/populate-market-metadata.js` as an alternative.
+- **Binance is geo-blocked on Railway** — ccxt calls to Binance fail from Railway IPs.
+  KuCoin is the active exchange. If you switch to Binance, you need a proxy URL configured
+  in Admin → Settings → Exchanges for the Binance row.
 - **Push to GitHub via GitHub Contents API** — `git push` is blocked in the Replit main agent.
-  Use the pattern in previous sessions: GET sha, PUT with base64 content.
-  Token: `$GITHUB_PERSONAL_ACCESS_TOKEN` (Replit secret).
+  Use GET (get sha) then PUT (base64 content). Token: `$GITHUB_PERSONAL_ACCESS_TOKEN`.
 - **Backend takes ~9 minutes cold** — ECONNREFUSED during this window is expected.
-- **Chart Engine addon NOT installed** — binary trading always uses TradingView.
+- **Exchange public mode**: without KuCoin API keys, exchange runs in public mode.
+  Tickers and charts work. Deposit address generation and withdrawals fail.
 
 ---
 
 ## Suggested next steps (in priority order)
 
-1. **Fix Cassandra** → follow the 6-step fix above → enables all ecosystem deposits.
-2. **Enable blockchains in admin panel** → after Cassandra is up. License check is bypassed ✅
-3. **Configure SMTP** → enables email verification, password reset.
-4. **Change superadmin password** → security hygiene.
-5. **Set up Stripe / PayPal** → fiat deposits.
-6. **Configure OpenAI or Gemini** → AI features.
+1. **Add KuCoin API keys** to Railway → Variables (3 vars: KEY, SECRET, PASSPHRASE)
+   → enables crypto deposit addresses and spot withdrawals for all users.
+2. **Fix Cassandra** → follow the 5-step fix above → enables ecosystem on-chain deposits
+   (ETH/BNB/TRON/SOL/MATIC custodial wallets for users).
+3. **Enable blockchains in admin panel** → after Cassandra is up.
+4. **Configure SMTP** → enables email verification, password reset.
+5. **Change superadmin password** (`superadmin@example.com` / `12345678`) → security.
+6. **Set up Stripe / PayPal** → fiat card deposits.
+7. **Configure OpenAI or Gemini** → AI features.
