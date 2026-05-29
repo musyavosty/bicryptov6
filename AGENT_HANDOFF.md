@@ -1,6 +1,6 @@
 # DeMourinho Crypto — Agent Handoff Document
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 This document is written for the next AI agent picking up this project. Read this
 before touching anything. It describes the full current state: what works, what
@@ -159,21 +159,40 @@ After this, all deposit chains are live.
 
 ---
 
-## Current state: what works (Project B, as of 2026-05-28)
+## Current state: what works (Project B, as of 2026-05-29)
 
+### Fully activated via activate-all.js (2026-05-29)
+
+- **All 18 extensions** enabled: p2p, staking, ico, futures, copy_trading, gateway,
+  ai_market_maker, trading_bot, nft, mailwizard, forex, ai_investment, ecommerce,
+  knowledge_base, mlm, binary_ai_engine, wallet_connect, ecosystem.
+- **45 settings** written/updated — all features on, KYC optional, withdrawals auto-approved.
+- **Spot trading**: 88 active pairs (23 original + 65 new: SHIB, PEPE, WIF, TON, SUI, APT,
+  INJ, TIA, FLOKI, BONK, LDO, RNDR, FET, WLD, ORDI, AAVE, MKR, COMP, DYDX, GMX,
+  ZEC, XMR, DASH, ETC, XLM, ALGO, VET, THETA, FTM, HBAR, ICP, FLOW, MINA, SAND,
+  MANA, AXS, GALA, CHZ, BLUR, PYTH, + 20 more/USDT + BTC/ETH).
+- **Binary options**: 36 markets (8 original + 28 new). 15 durations total (7 original +
+  8 new: 30s, 2/10/20/45/120/480/1440 min).
+- **Futures**: 40 markets (8 original + 32 new: ARB, OP, TON, SUI, APT, INJ, SEI,
+  PEPE, WIF, FTM, NEAR, SHIB, FIL, LDO, IMX, STX, HBAR, ICP, FET, WLD, ETC,
+  RNDR, TIA, ORDI + more).
+- **Investment plans**: 10 total (3 original Bronze/Silver/Gold + 7 new:
+  Starter/Platinum/Diamond + Crypto Bronze/Silver/Gold/Platinum).
+  14 durations. All 90 plan×duration combinations linked.
+- **Staking pools**: 14 total (4 original + 10 new:
+  USDC, BNB, XRP, ADA, DOT, SOL, AVAX, MATIC, ATOM, LINK).
+- **P2P payment methods**: 26 total (6 original + 20 new: Skrill, Neteller, WebMoney,
+  Perfect Money, Zelle, Venmo, CashApp, Alipay, WeChat Pay, M-Pesa, Pix, UPI,
+  GCash, Paytm, GrabPay, Bkash, OrangeMonkey, BTC/ETH/BNB on-chain).
+- **Forex plans**: 5 new (Micro/Mini/Standard/Pro/VIP Forex). 6 durations.
+- **AI Investment plans**: 4 new (Starter/Growth/Pro/Elite).
+- **KYC levels**: 3 seeded (Basic / Standard / Advanced) with field configs and trade limits.
+- **60 fiat currencies** enabled (USD, EUR, GBP, JPY, AUD + 55 more).
+- **Ecosystem blockchains**: all 4 existing rows enabled (TRON, TON, XMR, SOL).
+- **All exchange currencies** activated.
 - **Charts**: Live Binance data via ccxt (public mode, no API key). 99–146 candles per request.
-- **Spot trading**: 23 active pairs. `exchange_market.metadata` fully populated.
-- **Binary options**: 8 markets active (BTC/ETH/SOL/XRP/BNB/ADA/DOGE/MATIC vs USDT).
-  7 durations: 1, 3, 5, 15, 30, 60, 240 minutes. Min $1 / Max $10,000.
-  binaryStatus=true, binaryPracticeStatus=true. binarySettings JSON seeded.
-- **Futures trading**: 8 markets active (BTC/ETH/SOL/XRP/BNB/MATIC/DOGE/AVAX vs USDT).
-  futures extension enabled. All 8 rows have metadata populated.
 - **BTC deposits**: mempool.space scanner — no key needed. ✅
 - **Admin panel**: Super Admin has full access.
-- **Investment plans**: Bronze / Silver / Gold (3 plans, 3 durations each).
-- **Staking pools**: BTC Flexible / ETH 30-Day / USDT Stable / SOL High-Yield.
-- **P2P payment methods**: 6 global methods seeded.
-- **NFT categories**: 6 seeded. **Ecommerce categories**: 5 seeded.
 - **Exchange**: Binance (primary) + KuCoin both active.
 - **RPC endpoints**: BSC, Polygon, Solana, Tron, ETH (Infura) — all set ✅
 - **TronGrid API key**: set ✅
@@ -275,6 +294,7 @@ failed because `initial.sql` creates `binary_market` WITHOUT `minAmount`/`maxAmo
 | File | Purpose |
 |------|---------|
 | `railway-start.sh` | Boot script — runs on every Railway deploy |
+| `scripts/activate-all.js` | Full feature activation — runs on every Railway boot (idempotent) |
 | `Dockerfile.cassandra` | Custom Cassandra image with materialized views + rpc_address fix |
 | `scripts/cassandra-init.sh` | Init script called by Dockerfile.cassandra before Cassandra starts |
 | `scripts/populate-market-metadata.js` | Idempotent — populates exchange/futures metadata |
