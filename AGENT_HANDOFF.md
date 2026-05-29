@@ -371,6 +371,7 @@ All hotfix SQL files are in `scripts/sql/` and run automatically in `railway-sta
 | `hotfix-005-chart-engine-withdraw-methods.sql` | Enables chart_engine, removes 30min/70% duplicate duration, seeds deposit/withdraw methods |
 | `hotfix-006-ecosystem-tokens.sql` | Enables USDT/USDC/native tokens on ETH/BSC/TRON/POLYGON/SOL/BTC; inserts TRON USDT TRC-20 |
 | `hotfix-007-deactivate-matic.sql` | Deactivates MATIC in exchange_currency + exchange_market (KuCoin renamed MATIC→POL; was crashing price cron every 2min) |
+| `hotfix-008-futures-btc-staking.sql` | (1) Deactivates MATIC in futures_market — same KuCoin crash but in the futures price cron. (2) Inserts BTC into exchange_currency — BTC was missing entirely so price cron never fetched BTC price. (3) Deactivates MATIC staking pool — no live price → UI errors. |
 
 ---
 
