@@ -119,7 +119,7 @@ async function run() {
     ["BAT","USDT",0,0],["SAND","USDT",1,0],["MANA","USDT",1,0],["AXS","USDT",1,0],
     ["GALA","USDT",1,0],["APE","USDT",0,0],["BLUR","USDT",0,0],["PYTH","USDT",0,0],
     ["CFX","USDT",0,0],["CELO","USDT",0,0],["ROSE","USDT",0,0],["ZIL","USDT",0,0],
-    ["JASMY","USDT",0,0],["TURBO","USDT",0,0],["BTC","ETH",0,0],
+    ["JASMY","USDT",0,0],["TURBO","USDT",0,0],
   ];
   for (const [currency, pair, isTrending, isHot] of spotPairs) {
     await q(`spot ${currency}/${pair}`,
@@ -373,6 +373,14 @@ async function run() {
   // ── 16. Exchange currencies ───────────────────────────────────────────────
   console.log("[16] Exchange Currencies");
   await q("activate all exchange currencies", "UPDATE exchange_currency SET status = 1");
+  // KuCoin does not carry XXX/ETH pairs (e.g. LINK/ETH, SOL/ETH, XRP/ETH).
+  // The processCurrenciesPrices CRON fails hard on the first missing symbol,
+  // which blocks ALL price updates. Deactivate ETH-quoted currencies and the
+  // BTC/ETH exchange_market row so the CRON only sees pairs KuCoin supports.
+  await q("deactivate ETH-quoted exchange_currency (not on KuCoin)",
+    "UPDATE exchange_currency SET status = 0 WHERE pair = 'ETH'");
+  await q("deactivate BTC/ETH exchange_market (not on KuCoin)",
+    "UPDATE exchange_market SET status = 0 WHERE currency = 'BTC' AND pair = 'ETH'");
 
   // ── 17. Exchanges — KuCoin as primary (Binance is geo-blocked on Railway) ──
   // Binance returns HTTP 451 from Railway's IP range even for public/no-key
