@@ -39,6 +39,28 @@ fi
 # Force env var so docker-entrypoint also uses it (belt + suspenders)
 export CASSANDRA_RPC_ADDRESS=0.0.0.0
 
+# ── Fix 3: Set broadcast_rpc_address to the container's real IP ──────────────
+# Cassandra 4.x REQUIRES broadcast_rpc_address to be a real IP (not 0.0.0.0)
+# when rpc_address is 0.0.0.0. Without this, Cassandra either refuses to start
+# or advertises an unreachable address to clients. We resolve the container's
+# actual IP at runtime using hostname -i.
+ACTUAL_IP=$(hostname -i 2>/dev/null | awk '{print $1}')
+if [ -n "$ACTUAL_IP" ]; then
+    if grep -q "^broadcast_rpc_address:" "$YAML" 2>/dev/null; then
+        sed -i "s/^broadcast_rpc_address:.*/broadcast_rpc_address: ${ACTUAL_IP}/" "$YAML"
+        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (patched)"
+    elif grep -q "^# broadcast_rpc_address:" "$YAML" 2>/dev/null; then
+        sed -i "s/^# broadcast_rpc_address:.*/broadcast_rpc_address: ${ACTUAL_IP}/" "$YAML"
+        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (was commented, patched)"
+    else
+        echo "broadcast_rpc_address: ${ACTUAL_IP}" >> "$YAML"
+        echo "[CASSANDRA-INIT] broadcast_rpc_address: ${ACTUAL_IP} (appended)"
+    fi
+    export CASSANDRA_BROADCAST_RPC_ADDRESS="${ACTUAL_IP}"
+else
+    echo "[CASSANDRA-INIT] WARN: could not determine container IP for broadcast_rpc_address"
+fi
+
 echo "[CASSANDRA-INIT] Done. Handing off to Cassandra entrypoint..."
 
 # Hand off to the official Docker entrypoint (handles data dir init, etc.)
