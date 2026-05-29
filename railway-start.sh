@@ -308,6 +308,9 @@ node scripts/import-sql.js scripts/sql/hotfix-003-deactivate-eth-markets.sql || 
 # so each boot added new rows. Also fixes binary_market INSERT that was missing
 # the `id` column, causing every insert to silently fail. Idempotent.
 node scripts/import-sql.js scripts/sql/hotfix-004-dedup-tables.sql || echo "WARN: hotfix-004 had errors"
+# hotfix-005: enable chart_engine extension, remove duplicate 30-min binary duration,
+# seed deposit_method and withdraw_method tables.
+node scripts/import-sql.js scripts/sql/hotfix-005-chart-engine-withdraw-methods.sql || echo "WARN: hotfix-005 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
