@@ -482,6 +482,43 @@ async function run() {
       [title, processingTime, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields, title]);
   }
 
+  // ── 20. Ecosystem tokens — enable key deposit tokens ─────────────────────
+  // The ecosystem uses RPC nodes (Infura/ETH, TronGrid/TRON, BSC, Polygon, SOL)
+  // to generate custodial deposit addresses and monitor on-chain transactions.
+  // This works entirely WITHOUT KuCoin API keys — the only requirement is
+  // Cassandra running + a master wallet created in Admin → Ecosystem → Master Wallets.
+  //
+  // Insert TRON USDT (TRC-20) if missing (not in the seeded token list)
+  console.log("[20] Ecosystem Tokens");
+  await q("insert TRON USDT TRC-20",
+    `INSERT INTO ecosystem_token (id, name, currency, chain, network, contract, contractType, type, decimals, status, \`precision\`, createdAt, updatedAt)
+     SELECT UUID(), 'Tether USD', 'USDT', 'TRON', 'mainnet', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', 'NO_PERMIT', 'TRC20', 6, 1, 8, NOW(), NOW()
+     FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM ecosystem_token WHERE chain='TRON' AND currency='USDT')`);
+
+  // Enable USDT on all supported chains
+  await q("enable USDT/ETH",   "UPDATE ecosystem_token SET status=1 WHERE chain='ETH' AND currency='USDT'");
+  await q("enable USDT/BSC",   "UPDATE ecosystem_token SET status=1 WHERE chain='BSC' AND currency='USDT'");
+  await q("enable USDT/TRON",  "UPDATE ecosystem_token SET status=1 WHERE chain='TRON' AND currency='USDT'");
+  await q("enable USDT/POLYGON","UPDATE ecosystem_token SET status=1 WHERE chain='POLYGON' AND currency='USDT'");
+  await q("enable USDT/SOL",   "UPDATE ecosystem_token SET status=1 WHERE chain='SOL' AND currency='USDT' AND contract='Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'");
+
+  // Enable USDC on all supported chains
+  await q("enable USDC/ETH",   "UPDATE ecosystem_token SET status=1 WHERE chain='ETH' AND currency='USDC'");
+  await q("enable USDC/BSC",   "UPDATE ecosystem_token SET status=1 WHERE chain='BSC' AND currency='USDC'");
+  await q("enable USDC/POLYGON","UPDATE ecosystem_token SET status=1 WHERE chain='POLYGON' AND currency='USDC'");
+  await q("enable USDC/SOL",   "UPDATE ecosystem_token SET status=1 WHERE chain='SOL' AND currency='USDC'");
+
+  // Enable native chain coins (ETH, BNB, TRX, SOL, MATIC, BTC)
+  await q("enable ETH native",  "UPDATE ecosystem_token SET status=1 WHERE chain='ETH' AND currency='ETH' AND contractType='NATIVE'");
+  await q("enable BNB native",  "UPDATE ecosystem_token SET status=1 WHERE chain='BSC' AND currency='BNB' AND contractType='NATIVE'");
+  await q("enable TRX native",  "UPDATE ecosystem_token SET status=1 WHERE chain='TRON' AND currency='TRX' AND contractType='NATIVE'");
+  await q("enable SOL native",  "UPDATE ecosystem_token SET status=1 WHERE chain='SOL' AND currency='SOL' AND contractType='NATIVE'");
+  await q("enable MATIC native","UPDATE ecosystem_token SET status=1 WHERE chain='POLYGON' AND currency='MATIC' AND contractType='NATIVE'");
+  await q("enable BTC native",  "UPDATE ecosystem_token SET status=1 WHERE chain='BTC' AND contractType='NATIVE'");
+
+  // Ensure all ecosystem blockchains are enabled
+  await q("enable all ecosystem blockchains", "UPDATE ecosystem_blockchain SET status=1");
+
   // ── Done ───────────────────────────────────────────────────────────────────
   await conn.end();
   console.log(`\n=== Done: ${ok} succeeded, ${err} failed ===\n`);
