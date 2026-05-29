@@ -1,0 +1,13 @@
+-- hotfix-003-deactivate-eth-markets.sql
+-- KuCoin does not carry ANY XXX/ETH pairs (e.g. LINK/ETH, SOL/ETH, XRP/ETH).
+-- The processCurrenciesPrices CRON calls ccxt.fetchTicker() for every active
+-- exchange_market row. When it hits the first missing symbol it throws and
+-- exits, blocking ALL price updates for every subsequent run (~every 2 min).
+--
+-- activate-all.js was previously deactivating only BTC/ETH (too narrow) and
+-- had a broken query against exchange_currency (no 'pair' column exists there).
+-- This hotfix deactivates every ETH-quoted row in exchange_market so the CRON
+-- only sees pairs KuCoin actually supports.
+--
+-- Idempotent: already-inactive rows are untouched (status stays 0).
+UPDATE exchange_market SET status = 0 WHERE pair = 'ETH';
