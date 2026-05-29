@@ -309,6 +309,7 @@ Surgical edits to compiled JavaScript. Document any new ones here.
 | `src/api/admin/finance/exchange/provider/[id]/status.put.js` | 49–63 | `checkLicenseFileExists` always returns `true` | 2026-05-29 | Same license file check blocked enabling exchange providers with a `productId` |
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 25 | `connectTimeout: 2000` → `connectTimeout: 15000` | 2026-05-29 | 2s connect timeout was too short for cross-container Railway connection |
 | `src/api/(ext)/ecosystem/utils/scylla/client.js` | 47–48 | `MAX_RETRIES: 5→20`, `INITIAL_DELAY: 2000→15000` | 2026-05-29 | App gave up after ~64s total; Cassandra takes 60–90s to start → always hit max retries |
+| `src/utils/exchange.js` | 141–152 | Public/no-key mode now fetches `proxyUrl` from DB before creating ccxt instance (was hardcoded to `httpsAgentIPv4`) | 2026-05-29 | Public mode silently ignored the `proxyUrl` DB field — admin-configured proxy had no effect without API keys |
 
 **ScyllaDB fix detail** (3 bugs in one file, applied 2026-05-07):
 1. `tradingViewQueries` — `orderbook_by_symbol` MV: Added `WITH CLUSTERING ORDER BY (price ASC, side ASC)` — was missing entirely.
