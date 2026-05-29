@@ -314,6 +314,10 @@ node scripts/import-sql.js scripts/sql/hotfix-005-chart-engine-withdraw-methods.
 # hotfix-006: enable ecosystem tokens (USDT/USDC/native on ETH/BSC/TRON/POLYGON/SOL/BTC),
 # insert missing TRON USDT TRC-20 token. Required for on-chain deposits via RPC nodes.
 node scripts/import-sql.js scripts/sql/hotfix-006-ecosystem-tokens.sql || echo "WARN: hotfix-006 had errors"
+# hotfix-007: deactivate MATIC in exchange_currency and exchange_market.
+# KuCoin renamed MATIC to POL — MATIC/USDT is gone from KuCoin. Without this, the
+# processCurrenciesPrices CRON crashes every 2 minutes and blocks ALL price updates.
+node scripts/import-sql.js scripts/sql/hotfix-007-deactivate-matic.sql || echo "WARN: hotfix-007 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
