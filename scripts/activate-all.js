@@ -385,6 +385,13 @@ async function run() {
   // entirely on exchange_market below.
   await q("deactivate all ETH-quoted exchange_market rows (not on KuCoin)",
     "UPDATE exchange_market SET status = 0 WHERE pair = 'ETH'");
+  // KuCoin renamed MATIC to POL — MATIC/USDT no longer exists on KuCoin.
+  // processCurrenciesPrices crashes on the first missing symbol and blocks
+  // ALL price updates. Deactivate MATIC in both tables.
+  await q("deactivate MATIC exchange_currency (KuCoin uses POL, not MATIC)",
+    "UPDATE exchange_currency SET status = 0 WHERE currency = 'MATIC'");
+  await q("deactivate MATIC/USDT exchange_market (KuCoin uses POL/USDT)",
+    "UPDATE exchange_market SET status = 0 WHERE currency = 'MATIC'");
 
   // ── 17. Exchanges — KuCoin as primary (Binance is geo-blocked on Railway) ──
   // Binance returns HTTP 451 from Railway's IP range even for public/no-key
