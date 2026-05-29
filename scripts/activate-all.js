@@ -38,7 +38,7 @@ async function run() {
       'p2p','staking','ico','futures','copy_trading','gateway',
       'ai_market_maker','trading_bot','nft','mailwizard','forex',
       'ai_investment','ecommerce','knowledge_base','mlm',
-      'binary_ai_engine','wallet_connect','ecosystem'
+      'binary_ai_engine','wallet_connect','ecosystem','chart_engine'
     )`);
 
   // ── 2. Settings ────────────────────────────────────────────────────────────
@@ -166,8 +166,11 @@ async function run() {
 
   // ── 6. Binary durations — add faster and longer options ───────────────────
   console.log("[6] Binary Durations");
+  // Remove old seeded 30min/70% row so only the 85% version remains
+  await q("remove legacy 30min/70% duplicate",
+    "DELETE FROM binary_duration WHERE duration = 30 AND profitPercentage = 70");
   const durations = [
-    [30, 85],   // 30 seconds
+    [30, 85],   // 30 minutes
     [2, 82],    // 2 minutes
     [10, 74],   // 10 minutes
     [20, 71],   // 20 minutes
@@ -398,6 +401,86 @@ async function run() {
   // Deactivate all, then activate kucoin only
   await q("deactivate all exchanges", "UPDATE exchange SET status = 0");
   await q("set kucoin as primary", "UPDATE exchange SET status = 1 WHERE name = 'kucoin'");
+
+  // ── 18. Deposit methods (fiat / manual) ───────────────────────────────────
+  // These appear in the frontend Finance → Deposit → Fiat section and let users
+  // submit manual payment proof. Crypto USDT deposits use the exchange API and
+  // don't use this table — those require APP_KUCOIN_API_KEY / APP_KUCOIN_API_SECRET /
+  // APP_KUCOIN_API_PASSPHRASE env vars on Railway.
+  console.log("[18] Deposit Methods");
+  const depositMethods = [
+    ["Bank Wire Transfer",
+     "Send payment to our bank account. You will receive the bank details via email after submitting your request. Processing time: 1–3 business days.",
+     0, 0, 100, 100000,
+     JSON.stringify([
+       {name:"Bank Name",type:"text",required:true},
+       {name:"Account Number",type:"text",required:true},
+       {name:"Reference / Note",type:"text",required:true},
+     ])],
+    ["SEPA Bank Transfer",
+     "EU bank transfer via SEPA. Provide your name and reference code. Processing time: 1–2 business days.",
+     0, 0, 50, 50000,
+     JSON.stringify([
+       {name:"IBAN",type:"text",required:true},
+       {name:"BIC / SWIFT",type:"text",required:true},
+       {name:"Reference",type:"text",required:true},
+     ])],
+    ["Crypto Transfer (Manual)",
+     "Send crypto to our deposit address. Submit your transaction hash and admin will credit your account after on-chain confirmation.",
+     0, 0, 10, 500000,
+     JSON.stringify([
+       {name:"Transaction Hash / TXID",type:"text",required:true},
+       {name:"Amount Sent",type:"number",required:true},
+       {name:"Currency & Network",type:"text",required:true},
+     ])],
+  ];
+  for (const [title, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields] of depositMethods) {
+    await q(`deposit method: ${title}`,
+      `INSERT INTO deposit_method (id, title, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields, status, createdAt, updatedAt)
+       SELECT UUID(), ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW() FROM DUAL
+       WHERE NOT EXISTS (SELECT 1 FROM deposit_method WHERE title = ?)`,
+      [title, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields, title]);
+  }
+
+  // ── 19. Withdraw methods (fiat / manual) ──────────────────────────────────
+  // Used in Finance → Withdraw → Fiat. Crypto USDT withdrawals go through the
+  // exchange API (spot withdraw) and also require KuCoin API keys.
+  console.log("[19] Withdraw Methods");
+  const withdrawMethods = [
+    ["Bank Wire Transfer", "3–5 business days",
+     "Provide your bank account details. Withdrawals are reviewed and sent Monday–Friday.",
+     5, 0, 100, 50000,
+     JSON.stringify([
+       {name:"Account Holder Name",type:"text",required:true},
+       {name:"Bank Name",type:"text",required:true},
+       {name:"Account Number / IBAN",type:"text",required:true},
+       {name:"SWIFT / BIC",type:"text",required:true},
+       {name:"Bank Address",type:"text",required:false},
+     ])],
+    ["SEPA Bank Transfer", "1–2 business days",
+     "EU SEPA transfer. Provide your IBAN and BIC.",
+     2, 0, 50, 25000,
+     JSON.stringify([
+       {name:"Account Holder Name",type:"text",required:true},
+       {name:"IBAN",type:"text",required:true},
+       {name:"BIC / SWIFT",type:"text",required:true},
+     ])],
+    ["Crypto Withdrawal (Manual)", "1–24 hours",
+     "Provide your wallet address and network. Admin will process the on-chain transfer.",
+     1, 0, 10, 500000,
+     JSON.stringify([
+       {name:"Wallet Address",type:"text",required:true},
+       {name:"Network / Chain (e.g. TRC20, ERC20, BEP20)",type:"text",required:true},
+       {name:"Currency",type:"text",required:true},
+     ])],
+  ];
+  for (const [title, processingTime, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields] of withdrawMethods) {
+    await q(`withdraw method: ${title}`,
+      `INSERT INTO withdraw_method (id, title, processingTime, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields, status, createdAt, updatedAt)
+       SELECT UUID(), ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW() FROM DUAL
+       WHERE NOT EXISTS (SELECT 1 FROM withdraw_method WHERE title = ?)`,
+      [title, processingTime, instructions, fixedFee, percentageFee, minAmount, maxAmount, customFields, title]);
+  }
 
   // ── Done ───────────────────────────────────────────────────────────────────
   await conn.end();
