@@ -180,6 +180,59 @@ node -e "
   })();
 "
 
+# -------- Fix zero dates before Sequelize sync --------
+# Sequelize sync() runs ALTER TABLE on startup. MySQL 8 strict mode rejects
+# any ALTER TABLE that touches a column whose existing rows contain
+# '0000-00-00 00:00:00'. This fixup runs with an empty session sql_mode so
+# it can both read and clean every such value before the backend connects.
+# Idempotent: tables with no zero dates are untouched.
+echo "Fixing zero-date values (0000-00-00 00:00:00 → 2020-01-01 00:00:00)..."
+node -e "
+  const mysql = require('mysql2/promise');
+  (async () => {
+    let c;
+    try {
+      c = await mysql.createConnection({
+        host: process.env.DB_HOST, port: +process.env.DB_PORT,
+        user: process.env.DB_USER, password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+      });
+      // Run the session with no strict mode so we can safely read and
+      // overwrite the zero-date values without triggering further errors.
+      await c.query(\"SET SESSION sql_mode = ''\");
+      const [cols] = await c.query(
+        \"SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE \" +
+        \"FROM information_schema.COLUMNS \" +
+        \"WHERE TABLE_SCHEMA = ? \" +
+        \"  AND COLUMN_NAME IN ('createdAt','updatedAt','deletedAt') \" +
+        \"  AND DATA_TYPE IN ('datetime','timestamp')\",
+        [process.env.DB_NAME]
+      );
+      let total = 0;
+      for (const row of cols) {
+        const t = row.TABLE_NAME || row.table_name;
+        const col = row.COLUMN_NAME || row.column_name;
+        const nullable = (row.IS_NULLABLE || row.is_nullable) === 'YES';
+        const replacement = nullable ? 'NULL' : \"'2020-01-01 00:00:00'\";
+        try {
+          const sql = 'UPDATE ' + t + ' SET ' + col + ' = ' + replacement + \" WHERE \" + col + \" = '0000-00-00 00:00:00'\";
+          const [res] = await c.query(sql);
+          if (res.affectedRows > 0) {
+            console.log('  fixed ' + res.affectedRows + ' rows in ' + t + '.' + col);
+            total += res.affectedRows;
+          }
+        } catch (e2) { /* table may not exist yet; skip */ }
+      }
+      console.log('  zero-date sweep done (' + total + ' values fixed)');
+    } catch (e) {
+      console.error('WARN: zero-date fixup failed (' + e.message + '). Backend may crash-loop on ALTER TABLE.');
+    } finally {
+      if (c) { try { await c.end(); } catch(_){} }
+    }
+    process.exit(0);
+  })();
+"
+
 # -------- Ensure database exists --------
 node -e "
   const mysql = require('mysql2/promise');
