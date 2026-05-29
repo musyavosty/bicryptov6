@@ -302,6 +302,12 @@ node scripts/import-sql.js scripts/sql/hotfix-002-binary-columns.sql || echo "WA
 # XXX/ETH pairs). The processCurrenciesPrices CRON crashes on the first missing
 # symbol and blocks ALL price updates until fixed. Runs every boot — idempotent.
 node scripts/import-sql.js scripts/sql/hotfix-003-deactivate-eth-markets.sql || echo "WARN: hotfix-003 had errors"
+# hotfix-004: deduplicate exchange / binary_duration / staking_pools tables and
+# insert missing binary market pairs. Root cause: activate-all.js used
+# INSERT IGNORE + UUID() on tables with no UNIQUE constraint on business columns,
+# so each boot added new rows. Also fixes binary_market INSERT that was missing
+# the `id` column, causing every insert to silently fail. Idempotent.
+node scripts/import-sql.js scripts/sql/hotfix-004-dedup-tables.sql || echo "WARN: hotfix-004 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
