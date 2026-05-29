@@ -75,91 +75,97 @@ SCYLLA_DATACENTER=datacenter1
 
 ---
 
-## The one remaining blocker: Cassandra not connecting
+## Cassandra: status and definitive fix (2026-05-29)
 
-### Root cause (two bugs)
+### Full root cause history
 
-1. **Binds to localhost only** — Cassandra 4.1 in Docker binds `rpc_address` to
-   `localhost` by default. Other Railway services trying to reach port 9042 get
-   ECONNREFUSED because it's not listening on the container's network interface.
+Multiple bugs were fixed in sequence. Here is the complete picture:
 
-2. **Materialized views disabled** — Cassandra 4.1 ships with materialized views
-   off by default (`# materialized_views_enabled: false` in cassandra.yaml). The
-   app's ecosystem extension needs them to create orderbook/candle tables.
-   Error: `[ECOSYSTEM] ✗ Failed to create ScyllaDB tables: Materialized views are disabled`.
+**Bug A (fixed)** — Binds to localhost only: Cassandra 4.1 binds `rpc_address` to `localhost`
+by default. Fixed by init script detecting real IPv4 and setting `CASSANDRA_RPC_ADDRESS`,
+`CASSANDRA_BROADCAST_RPC_ADDRESS`, `CASSANDRA_LISTEN_ADDRESS`, and `CASSANDRA_BROADCAST_ADDRESS`
+all to the container's actual IPv4 address.
 
-### Fix: Dockerfile.cassandra (already pushed to GitHub)
+**Bug B (fixed)** — Materialized views disabled: Cassandra 4.1 ships with
+`materialized_views_enabled: false`. Fixed by init script patching cassandra.yaml.
 
-Both fixes are solved by building the Cassandra service from `Dockerfile.cassandra`
-(in the repo root) instead of the plain `cassandra:4.1` image.
+**Bug C (fixed)** — App gave up too fast: `MAX_RETRIES=5` + `INITIAL_DELAY=2000ms` meant the
+app exhausted all retries in ~64s while Cassandra takes 60–90s to start. Fixed: dist patch to
+`client.js` sets `MAX_RETRIES=20`, `INITIAL_DELAY=15000ms`, `connectTimeout=15000ms`.
 
-`Dockerfile.cassandra` uses `cassandra:4.1` as base and runs `scripts/cassandra-init.sh`
-before startup, which:
-- Sets `materialized_views_enabled: true` in cassandra.yaml
-- Sets `rpc_address: 0.0.0.0` so CQL is reachable across the Railway internal network
+**Bug D — OOM crash loop (fixed 2026-05-29, the persistent crash):**
 
-### Current Railway state (as of 2026-05-29)
+**Root cause confirmed from Railway logs**: Cassandra starts successfully (init detects
+`10.144.199.145`, sets all addresses), initializes system tables, then crashes silently
+2–2.5 minutes into startup — no error message, just a sudden container restart. This
+is a **kernel OOM kill**. With `-Xmx512M` JVM heap + JVM overhead (~200MB+), the
+Cassandra process easily exceeds 700MB total RAM. Railway's container RAM ceiling
+kills it silently before it finishes startup.
 
-The Cassandra service in Railway Project B is already configured:
+**Secondary factor**: Each Railway deploy can give Cassandra a new container IP. Cassandra
+stores its old IP in the `system` keyspace gossip tables on the persistent volume. On
+the next boot with a new IP, it tries to reconcile ring state with the stale gossip,
+making startup even more memory-intensive → higher OOM risk.
+
+**Fix applied to `scripts/cassandra-init.sh` (2026-05-29):**
+
+1. **Force low heap**: The init script now exports `MAX_HEAP_SIZE=128M` and
+   `HEAP_NEWSIZE=32M` unconditionally, overriding any Railway env var values.
+   Cassandra is slower but stable. Do NOT set `MAX_HEAP_SIZE` higher than 256M
+   on Railway without confirming the container has >1GB RAM.
+
+2. **Wipe stale gossip state on every boot**: The init script deletes the
+   `system.peers*`, `system.peer_events*`, `system.local`, and `system_schema`
+   directories from `/var/lib/cassandra/data/` before Cassandra starts. It also
+   clears `commitlog/`, `hints/`, and `saved_caches/`. This is SAFE because:
+   - Single-node deployment — no cluster peers to reconcile with
+   - The app recreates the `trading` and `futures` keyspaces via CQL on every connect
+   - Only system metadata is cleared; actual user data in `trading/` and `futures/`
+     subdirectories within `/var/lib/cassandra/data/` is NOT touched
+
+### Current Railway Cassandra service config (as of 2026-05-29)
+
 - Source: GitHub repo `musyavosty/bicryptov6`, Dockerfile: `Dockerfile.cassandra` ✅
 - Config file: `railway.cassandra.json` (no healthcheck, no start command) ✅
-- Env vars already set on the Cassandra service:
+- Env vars on the Cassandra service — leave these as-is (init script overrides heap internally):
   ```
-  CASSANDRA_RPC_ADDRESS=0.0.0.0
   CASSANDRA_CLUSTER_NAME=demourinho
   CASSANDRA_DC=datacenter1
   HEAP_NEWSIZE=128M
   MAX_HEAP_SIZE=512M
   ```
+  (The init script forces 128M regardless of what MAX_HEAP_SIZE is set to above.)
 
-**Fixed (2026-05-29 — three bugs):**
+### How to apply the fix
 
-**Bug A — `rpc_address` not taking effect:** `cassandra-init.sh` was skipping the
-`rpc_address` patch when `CASSANDRA_RPC_ADDRESS` was set, deferring to the Docker
-entrypoint which does NOT reliably honor that env var. Fixed: the init script now
-ALWAYS patches `rpc_address: 0.0.0.0` unconditionally AND force-exports the env var.
+**Step 1 — Push is already on GitHub**
 
-**Bug B — `rpc_address: 0.0.0.0` requires `broadcast_rpc_address` = real IP (unsettable statically):**
-Cassandra 4.x crashes if `rpc_address=0.0.0.0` and `broadcast_rpc_address` is unset or also `0.0.0.0`.
-The container IP isn't known at deploy time, so `broadcast_rpc_address` can't be set as a static Railway env var.
-**Final fix (2026-05-29):** switched to `rpc_interface: eth0` — binds CQL to the container's actual
-eth0 IP without needing `broadcast_rpc_address` at all. `cassandra-init.sh` also `unset CASSANDRA_RPC_ADDRESS`
-so the Docker entrypoint doesn't override back to `0.0.0.0`.
+`scripts/cassandra-init.sh` with the OOM fix is already pushed to GitHub.
+Just trigger a redeploy of the `scylladb-railway` service in Railway → Project B.
 
-**Bug C — app gave up before Cassandra was ready:** `MAX_RETRIES=5` + `INITIAL_DELAY=2000ms`
-meant the app exhausted all retries in ~64 seconds. Cassandra takes 60–90s to start, so the
-app almost always hit max retries before a single connection attempt could succeed. Fixed:
-`MAX_RETRIES=20`, `INITIAL_DELAY=15000ms`, `connectTimeout=15000ms` — app now waits up to
-~10 minutes for Cassandra before giving up (dist patch in `client.js`).
+**Step 2 — Wait for healthy start**
 
-### How to apply the fix (Railway agent or manual)
-
-**Step 1 — Redeploy the Cassandra service**
-
-The code fix is already pushed to GitHub. Just trigger a redeploy of the
-`scylladb-railway` service in Railway → Project B. Railway will pull the
-updated `scripts/cassandra-init.sh` and rebuild the image.
-
-Wait for it to be healthy. Look for these lines in the Cassandra logs:
+Look for these lines in the Cassandra logs (takes 90–120s):
 ```
-[CASSANDRA-INIT] materialized_views_enabled: true
-[CASSANDRA-INIT] rpc_address: 0.0.0.0 (patched in yaml)
-Starting listening for CQL clients on /0.0.0.0:9042
+[CASSANDRA-INIT] Heap forced to MAX_HEAP_SIZE=128M HEAP_NEWSIZE=32M (OOM prevention)
+[CASSANDRA-INIT] Stale gossip/system state cleared (trading/futures data preserved)
+[CASSANDRA-INIT] Detected IPv4: <some IP>
+[CASSANDRA-INIT] All CASSANDRA_*_ADDRESS env vars set to <IP>
+Starting listening for CQL clients on /<IP>:9042
 ```
 
-Do NOT proceed until you see `0.0.0.0:9042` (not `127.0.0.1:9042`).
-If you still see `127.0.0.1:9042`, also add `CASSANDRA_LISTEN_ADDRESS=0.0.0.0`
-to the Cassandra service env vars and redeploy again.
+The `Starting listening for CQL clients` line confirms Cassandra is up.
+If you do NOT see it within 3 minutes, Cassandra is still crashing — check if the
+container is being OOM killed (no error log, just a restart).
 
-**Step 4 — Verify SCYLLA_CONNECT_POINTS on the app service**
+**Step 3 — Verify SCYLLA_CONNECT_POINTS on the app service**
 
 The app service (`demourinho-crypto`) must have:
 ```
 SCYLLA_CONNECT_POINTS=scylladb-railway.railway.internal:9042
 ```
-Check this is set. The Railway agent previously set it but check it's still there.
 
-**Step 5 — Redeploy demourinho-crypto**
+**Step 4 — Redeploy demourinho-crypto**
 
 Watch the app logs for:
 ```
@@ -171,7 +177,7 @@ Watch the app logs for:
 
 If you see `[SCYLLA] ✗ Max retries reached`, Cassandra is not yet ready — check its logs.
 
-**Step 6 — Enable blockchains in admin panel**
+**Step 5 — Enable blockchains in admin panel**
 
 1. Log in as `superadmin@example.com` / `12345678` (change password immediately)
 2. Go to **Admin → Wallets → Ecosystem → Blockchains**
