@@ -141,7 +141,7 @@ async function run() {
   ];
   for (const [currency, pair, isTrending, isHot] of binaryPairs) {
     await q(`binary ${currency}/${pair}`,
-      "INSERT IGNORE INTO binary_market (currency, pair, status, minAmount, maxAmount, isTrending, isHot) VALUES (?, ?, 1, 1.00, 10000.00, ?, ?)",
+      "INSERT IGNORE INTO binary_market (id, currency, pair, status, minAmount, maxAmount, isTrending, isHot) VALUES (UUID(), ?, ?, 1, 1.00, 10000.00, ?, ?)",
       [currency, pair, isTrending, isHot]);
   }
 
@@ -178,8 +178,8 @@ async function run() {
   ];
   for (const [duration, profit] of durations) {
     await q(`duration ${duration}min`,
-      "INSERT IGNORE INTO binary_duration (id, duration, profitPercentage, status) VALUES (UUID(), ?, ?, 1)",
-      [duration, profit]);
+      "INSERT INTO binary_duration (id, duration, profitPercentage, status) SELECT UUID(), ?, ?, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM binary_duration WHERE duration = ? AND profitPercentage = ?)",
+      [duration, profit, duration, profit]);
   }
 
   // ── 7. Currencies — enable major world currencies ─────────────────────────
@@ -262,9 +262,10 @@ async function run() {
   ];
   for (const [name,token,symbol,desc,apr,lock,min,max,earlyFee,adminFee,promoted,freq,autoComp,src,walletType] of newPools) {
     await q(`pool: ${name}`,
-      `INSERT IGNORE INTO staking_pools (id, name, token, symbol, description, apr, lockPeriod, minStake, maxStake, earlyWithdrawalFee, adminFeePercentage, status, isPromoted, earningFrequency, autoCompound, profitSource, walletType)
-       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?)`,
-      [name, token, symbol, desc, apr, lock, min, max, earlyFee, adminFee, promoted, freq, autoComp, src, walletType]);
+      `INSERT INTO staking_pools (id, name, token, symbol, description, apr, lockPeriod, minStake, maxStake, earlyWithdrawalFee, adminFeePercentage, status, isPromoted, earningFrequency, autoCompound, profitSource, walletType)
+       SELECT UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ? FROM DUAL
+       WHERE NOT EXISTS (SELECT 1 FROM staking_pools WHERE name = ?)`,
+      [name, token, symbol, desc, apr, lock, min, max, earlyFee, adminFee, promoted, freq, autoComp, src, walletType, name]);
   }
 
   // ── 12. P2P Payment methods — add global options ──────────────────────────
@@ -388,9 +389,12 @@ async function run() {
   // If you later configure a Binance proxy in the admin Settings → Exchanges tab,
   // flip this: UPDATE exchange SET status=0; UPDATE exchange SET status=1 WHERE name='binance'.
   console.log("[17] Exchanges");
-  // Insert kucoin row if the seeder didn't run (idempotent via INSERT IGNORE)
+  // Insert kucoin row only if it doesn't exist yet (fresh DB with no seeder).
+  // Using WHERE NOT EXISTS instead of INSERT IGNORE + UUID() — the exchange table
+  // has no UNIQUE constraint on name, so INSERT IGNORE would add a new duplicate
+  // row on every boot since each new UUID() never collides with the PK.
   await q("ensure kucoin row exists",
-    "INSERT IGNORE INTO exchange (id, name, title, description, type, status) VALUES (UUID(), 'kucoin', 'KuCoin', 'KuCoin exchange for spot trading with real-time market data, order execution, and balance management.', 'spot', 0)");
+    "INSERT INTO exchange (id, name, title, description, type, status) SELECT UUID(), 'kucoin', 'KuCoin', 'KuCoin exchange for spot trading with real-time market data, order execution, and balance management.', 'spot', 0 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM exchange WHERE name = 'kucoin')");
   // Deactivate all, then activate kucoin only
   await q("deactivate all exchanges", "UPDATE exchange SET status = 0");
   await q("set kucoin as primary", "UPDATE exchange SET status = 1 WHERE name = 'kucoin'");
