@@ -72,6 +72,25 @@ SCYLLA_FUTURES_KEYSPACE=futures
 SCYLLA_DATACENTER=datacenter1
 ```
 
+### CRITICAL missing env vars — ecosystem wallet vault is broken without these
+
+These TWO variables must be set or ALL ecosystem wallet operations fail with
+"Encryption key is not set" / "Failed to get wallet":
+
+```
+ENCRYPTED_ENCRYPTION_KEY=<generated — run: node scripts/generate-encryption-key.js>
+ENCRYPTION_KEY_PASSPHRASE=<generated — same script>
+```
+
+Run `node scripts/generate-encryption-key.js` locally, copy the two output values
+into Railway → Variables → demourinho-crypto service, then redeploy.
+
+**CRITICAL**: Back up the "Master key" the script prints. If you lose it AND the env
+vars, all ecosystem wallet private keys become permanently unreadable and any funds
+held in on-chain wallets are lost forever. Store it in a password manager offline.
+
+**CRITICAL**: Never change these values after ecosystem wallets have been created.
+
 ### Missing env vars that unlock additional functionality
 
 Add these to Railway → Variables for the `demourinho-crypto` service to enable the
@@ -80,6 +99,8 @@ and run trading, but they enable deposits, withdrawals, and other advanced featu
 
 | Variable | Purpose | Where to get it |
 |----------|---------|----------------|
+| `ENCRYPTED_ENCRYPTION_KEY` | **CRITICAL** — ecosystem wallet vault (on-chain deposit addresses, private keys) | Run `node scripts/generate-encryption-key.js` |
+| `ENCRYPTION_KEY_PASSPHRASE` | **CRITICAL** — paired with above | Same script |
 | `APP_KUCOIN_API_KEY` | Crypto spot deposits (deposit addresses), crypto withdrawals | KuCoin → API Management → Create API |
 | `APP_KUCOIN_API_SECRET` | Same — all three must be set together | Same |
 | `APP_KUCOIN_API_PASSPHRASE` | Same — all three must be set together | Same |
