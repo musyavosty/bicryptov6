@@ -393,6 +393,7 @@ All hotfix SQL files are in `scripts/sql/` and run automatically in `railway-sta
 | `hotfix-006-ecosystem-tokens.sql` | Enables USDT/USDC/native tokens on ETH/BSC/TRON/POLYGON/SOL/BTC; inserts TRON USDT TRC-20 |
 | `hotfix-007-deactivate-matic.sql` | Deactivates MATIC in exchange_currency + exchange_market (KuCoin renamed MATIC→POL; was crashing price cron every 2min) |
 | `hotfix-008-futures-btc-staking.sql` | (1) Deactivates MATIC in futures_market — same KuCoin crash but in the futures price cron. (2) Inserts BTC into exchange_currency — BTC was missing entirely so price cron never fetched BTC price. (3) Deactivates MATIC staking pool — no live price → UI errors. |
+| `hotfix-009-binary-market-kucoin-symbols.sql` | Deactivates MATIC, FTM, RNDR in binary_market. All three symbols are missing from KuCoin (MATIC→POL rename, FTM→S/Sonic migration, RNDR delisted). Active rows crash the binary price cron on every cycle, killing ALL binary option price updates. Applied live to DB 2026-06-02. |
 
 ---
 
