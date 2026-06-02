@@ -322,6 +322,10 @@ node scripts/import-sql.js scripts/sql/hotfix-007-deactivate-matic.sql || echo "
 # but for the futures price cron), add BTC to exchange_currency (price cron was missing
 # BTC entirely), deactivate MATIC staking pool (no live price → UI errors).
 node scripts/import-sql.js scripts/sql/hotfix-008-futures-btc-staking.sql || echo "WARN: hotfix-008 had errors"
+# hotfix-009: deactivate FTM, RNDR, MATIC in binary_market — all three symbols are
+# missing from KuCoin (renamed/delisted). Active rows crash the binary price cron
+# every cycle and kill ALL binary option price updates.
+node scripts/import-sql.js scripts/sql/hotfix-009-binary-market-kucoin-symbols.sql || echo "WARN: hotfix-009 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
