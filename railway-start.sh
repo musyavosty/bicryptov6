@@ -326,6 +326,10 @@ node scripts/import-sql.js scripts/sql/hotfix-008-futures-btc-staking.sql || ech
 # missing from KuCoin (renamed/delisted). Active rows crash the binary price cron
 # every cycle and kill ALL binary option price updates.
 node scripts/import-sql.js scripts/sql/hotfix-009-binary-market-kucoin-symbols.sql || echo "WARN: hotfix-009 had errors"
+# hotfix-010: deactivate non-USDT spot pairs KuCoin doesn't carry (SOL/BTC, ETH/BTC,
+# LINK/ETH). Active rows crash processCurrenciesPrices cron every 2 min, killing ALL
+# spot price updates — same pattern as MATIC/FTM/RNDR in binary markets.
+node scripts/import-sql.js scripts/sql/hotfix-010-spot-market-non-usdt-pairs.sql || echo "WARN: hotfix-010 had errors"
 echo "Data hotfixes applied."
 
 # -------- Run platform data sweeps (exchanges, markets, settings) --------
