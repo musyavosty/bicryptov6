@@ -1,243 +1,301 @@
 # DeMourinho Crypto — Railway Deployment Guide
 
-## Prerequisites
+Last updated: 2026-06-03
 
-- A [Railway](https://railway.app) account
-- This repository pushed to GitHub
-- 10–15 minutes for a cold deploy (schema import + seeding)
-
----
-
-## Step 1 — Create the Railway project
-
-1. Railway → **New Project** → **Deploy from GitHub repo** → select `bicryptov6`
-2. Railway automatically detects `railway.json` and `nixpacks.toml` and uses them.
+This guide walks through deploying a fresh copy of DeMourinho Crypto on Railway.
+The boot script handles everything automatically — you only need to connect the
+database plugins and (optionally) add API keys for extra features.
 
 ---
 
-## Step 2 — Add plugins
+## What you get out of the box (zero API keys)
 
-In the same project, click **+ New** → **Database**:
+Before touching anything, know what already works automatically on a fresh deploy:
 
-- **MySQL** (required — all app data)
-- **Redis** (required — BullMQ queues, cron jobs, rate-limiting; the backend will
-  start without it but crons and deposit monitors will fail silently)
+- ✅ Full trading platform (spot, futures, binary options)
+- ✅ Live price tickers and charts via KuCoin public API
+- ✅ User signup, login, 2FA, admin panel
+- ✅ Investment plans, staking pools, P2P trading
+- ✅ Manual fiat deposit/withdrawal (bank wire, SEPA — admin approves)
+- ✅ All secrets auto-generated (JWT keys, encryption key) — no manual setup
 
-Both plugins inject their connection variables automatically. The boot script maps
-them onto the names the app expects (`DB_HOST`, `REDIS_HOST`, etc.).
+What needs API keys to unlock:
+- Crypto deposits/withdrawals → KuCoin API keys (free, 10 min setup, no KYC)
+- Email notifications → SMTP credentials
+- Card payments → Stripe keys
 
 ---
 
-## Step 3 — Set environment variables
+## Step 1 — Fork or connect the repository
 
-Go to your service → **Variables** → switch to the raw editor and paste the block
-below. Replace every `CHANGE_ME` value before deploying to real users.
+The boot script lives in the repo. Railway must be connected to this GitHub repository
+so it can pull and run `railway-start.sh` on every deploy.
+
+1. Go to [railway.app](https://railway.app) → **New Project**
+2. Select **Deploy from GitHub repo** → connect to `bicryptov6`
+3. Railway auto-detects `railway.json` and `nixpacks.toml` — do not change them
+
+---
+
+## Step 2 — Add the required database plugins
+
+Inside your Railway project, click **+ New** → **Database** and add:
+
+| Plugin | Required? | Purpose |
+|--------|-----------|---------|
+| **MySQL** | ✅ Yes | All app data (160 tables) |
+| **Redis** | ✅ Yes | BullMQ queues, cron jobs, deposit monitors, rate-limiting |
+
+Both plugins automatically inject their connection variables. The boot script maps
+`MYSQLHOST/PORT/USER/PASSWORD/DATABASE` and `REDISHOST/PORT/PASSWORD` onto the names
+the app expects. You do not need to set any database env vars manually.
+
+---
+
+## Step 3 — Deploy
+
+Click **Deploy** (or it may auto-deploy when you connected the repo).
+
+The first deploy takes **10–15 minutes** because it:
+- Imports the 160-table schema from `initial.sql`
+- Runs Sequelize seeders (creates super admin, default settings)
+- Runs all 10 data hotfixes
+- Activates all features (markets, plans, staking, P2P, etc.)
+
+Subsequent deploys take **2–3 minutes** (schema already exists, sweeps are skipped).
+
+**Watch for this in Railway logs to confirm success:**
+```
+================================================================
+  Bicrypto Railway Boot
+================================================================
+DB target: root@...
+Redis target: ...
+MySQL is reachable.
+[auto-secrets] ...
+Applying MySQL 8 schema fixups...
+Fixing zero-date values...
+Importing initial.sql ...      ← only on first deploy
+Schema imported.
+Running seeders...             ← only on first deploy
+Applying data hotfixes...
+Data hotfixes applied.
+Running platform data sweeps...   ← only if exchange_market is empty
+Feature activation done.
+Starting backend (port 4000) + frontend (port 3000) under PM2...
+```
+
+---
+
+## Step 4 — Verify the deployment
+
+1. Open the Railway-generated URL (shown in your service's Settings → Domains)
+2. Go to `/login` and sign in with `superadmin@example.com` / `12345678`
+3. **Change this password immediately**
+4. Confirm price charts are live on the homepage
+
+If you see a loading spinner on the home page and no charts:
+- Check Railway logs for the backend. The most common cause is that Redis wasn't
+  attached — the backend starts but cron jobs that fetch prices don't run.
+- Confirm both MySQL AND Redis plugins are connected to the app service.
+
+---
+
+## Step 5 — Set optional environment variables for full functionality
+
+Go to your Railway service → **Variables** tab. Add any of the following:
+
+### Crypto deposits (highest priority — adds real value immediately)
 
 ```env
-# ── App identity ──────────────────────────────────────────────────────────
-NEXT_PUBLIC_SITE_NAME=DeMourinho Crypto
-NEXT_PUBLIC_SITE_DESCRIPTION=DeMourinho Crypto — premium cryptocurrency exchange
-NEXT_PUBLIC_DEMO_STATUS=true
-
-# ── JWT / session ─────────────────────────────────────────────────────────
-# Generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET=CHANGE_ME_64_hex_chars
-JWT_EXPIRY=7d
-JWT_REFRESH_SECRET=CHANGE_ME_different_64_hex_chars
-JWT_REFRESH_EXPIRY=30d
-
-# ── VAPID (push notifications — optional) ─────────────────────────────────
-# Generate: npx web-push generate-vapid-keys
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=CHANGE_ME
-VAPID_PRIVATE_KEY=CHANGE_ME
-
-# ── Email (leave blank to disable — signup emails won't send) ─────────────
-# Option A: SMTP
-# SMTP_HOST=smtp.example.com
-# SMTP_PORT=587
-# SMTP_USER=noreply@example.com
-# SMTP_PASS=CHANGE_ME
-# SMTP_SENDER=noreply@example.com
-# Option B: SendGrid
-# SENDGRID_API_KEY=CHANGE_ME
-
-# ── FX rates (optional — app works without it, logs warnings) ─────────────
-# Free tier: 1000 req/month — https://openexchangerates.org/signup/free
-# APP_OPENEXCHANGERATES_APP_ID=CHANGE_ME
-
-# ── Stripe (fiat deposits — optional) ────────────────────────────────────
-# STRIPE_SECRET_KEY=CHANGE_ME
-# STRIPE_WEBHOOK_SECRET=CHANGE_ME
-# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=CHANGE_ME
-
-# ── PayPal (fiat deposits — optional) ────────────────────────────────────
-# PAYPAL_CLIENT_ID=CHANGE_ME
-# PAYPAL_CLIENT_SECRET=CHANGE_ME
-
-# ── Blockchain RPC nodes (crypto deposits/withdrawals — optional) ─────────
-# Without these, only BTC deposits (via mempool.space) work.
-# ETH_RPC_URL=https://mainnet.infura.io/v3/CHANGE_ME
-# SOL_RPC_URL=https://api.mainnet-beta.solana.com
-# BNB_RPC_URL=https://bsc-dataseed.binance.org
-# MATIC_RPC_URL=https://polygon-rpc.com
-# TRON_RPC_URL=https://api.trongrid.io
-# AVAX_RPC_URL=https://api.avax.network/ext/bc/C/rpc
-# ARB_RPC_URL=https://arb1.arbitrum.io/rpc
-
-# ── ScyllaDB (ecosystem/on-chain markets — optional) ─────────────────────
-# SCYLLA_HOSTS=CHANGE_ME
-# SCYLLA_KEYSPACE=bicrypto
-# SCYLLA_USERNAME=CHANGE_ME
-# SCYLLA_PASSWORD=CHANGE_ME
-
-# ── AI features (optional) ────────────────────────────────────────────────
-# OPENAI_API_KEY=CHANGE_ME
-# GEMINI_API_KEY=CHANGE_ME
-
-# ── Google OAuth (optional) ───────────────────────────────────────────────
-# GOOGLE_CLIENT_ID=CHANGE_ME
-# GOOGLE_CLIENT_SECRET=CHANGE_ME
+APP_KUCOIN_API_KEY=your_key_here
+APP_KUCOIN_API_SECRET=your_secret_here
+APP_KUCOIN_API_PASSPHRASE=your_passphrase_here
 ```
 
-**Do NOT** set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`,
-`REDIS_HOST`, `REDIS_PORT`, or `REDIS_PASSWORD` manually — Railway injects these
-automatically from the plugins. The boot script maps them.
+How to get these:
+1. Sign up at [kucoin.com](https://www.kucoin.com) (free, no KYC required for API keys)
+2. Go to **Profile → API Management → Create API**
+3. Set API type: **API Key**; permissions: **General** (read) is enough for deposits.
+   Add **Trade** if you also want programmatic withdrawals.
+4. Copy all three values into Railway
 
----
+After adding, redeploy the service. Users will immediately see deposit addresses in their wallets.
 
-## Step 4 — Deploy
+> **Important**: Users do NOT need a KuCoin account. They send crypto from any wallet
+> (MetaMask, Coinbase, Trust Wallet, Binance, hardware wallet — anything) to the address
+> KuCoin generates for your platform. KuCoin is invisible to your users.
 
-Click **Deploy** (or push to your GitHub branch). Railway runs `railway-start.sh`:
+### Email (signup confirmation, password reset)
 
-| Step | What happens | Time |
-|------|-------------|------|
-| 1 | MySQL plugin variables mapped | instant |
-| 2 | Waits for MySQL to be reachable | 0–30s |
-| 3 | Relaxes `sql_mode` globally | instant |
-| 4 | Drops incompatible JSON index | instant |
-| 5 | If DB empty: imports `initial.sql` (160 tables) | 3–5 min |
-| 6 | If DB empty: runs Sequelize seeders | 1–2 min |
-| 7 | Applies data hotfixes (idempotent SQL) | instant |
-| 8 | If <5 exchange markets: runs data sweep | 30s |
-| 9 | Populates market metadata (always runs) | 5s |
-| 10 | PM2 starts backend (4000) + frontend ($PORT) | 30s |
-
-Total cold deploy: **8–15 minutes**. Health check timeout is 600s.
-
----
-
-## Step 5 — Generate a domain
-
-Service → **Settings** → **Networking** → **Generate Domain**.
-
-The frontend is exposed on `$PORT`. The backend is internal (port 4000) and
-reached by the frontend via Next.js rewrites — no separate domain needed.
-
----
-
-## Step 6 — First login
-
-Navigate to your Railway domain and log in:
-
-- Email: `superadmin@example.com`
-- Password: `12345678`
-
-**Change the password immediately.**
-
-To promote a user to Admin: Admin panel → CRM → Users → click user → change Role.
-Both Super Admin and Admin roles can update user roles from the UI.
-
----
-
-## Troubleshooting
-
-### "Market data not found" on order placement
-Run on the Railway MySQL console to verify:
-```sql
-SELECT currency, pair, metadata IS NOT NULL as has_meta FROM exchange_market;
+```env
+APP_EMAILER=smtp
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your.address@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_SENDER=your.address@gmail.com
 ```
-If any show `has_meta=0`, trigger a redeploy — `railway-start.sh` always runs
-`scripts/populate-market-metadata.js` on every boot.
 
-### Partial schema (DB has 1–159 tables)
-A previous import died partway. Recover:
-```sql
-DROP DATABASE railway; CREATE DATABASE railway CHARACTER SET utf8mb4;
+For Gmail: use an **App Password** (Google Account → Security → 2-Step Verification →
+App Passwords). Do NOT use your main Gmail password.
+
+Alternative — SendGrid free tier (100 emails/day):
+```env
+APP_EMAILER=sendgrid
+SENDGRID_API_KEY=SG.xxx
 ```
-Then redeploy.
 
-### Backend crashes with TEXT default errors
+### Site branding
+
+```env
+NEXT_PUBLIC_SITE_NAME=Your Exchange Name
+NEXT_PUBLIC_SITE_DESCRIPTION=Your tagline here
+NEXT_PUBLIC_DEMO_STATUS=false
+```
+
+### Stripe card payments (optional)
+
+```env
+STRIPE_SECRET_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+```
+
+### AI trading bots (optional)
+
+```env
+OPENAI_API_KEY=sk-xxx
+```
+
+---
+
+## Step 6 — First login checklist
+
+After confirming the site loads:
+
+1. **Change superadmin password** — Admin panel → Profile → Change Password
+2. **Set your site name** — Add `NEXT_PUBLIC_SITE_NAME` to Railway vars, redeploy
+3. **Configure email** — without this, users can't confirm accounts or reset passwords
+4. **Add KuCoin API keys** — enables crypto deposits (see Step 5 above)
+5. **Credit test users** — Admin → Finance → Users → select user → add balance manually.
+   Use this to give yourself trading balance while deposits are being set up.
+
+---
+
+## Common issues and solutions
+
+### Backend logs: "No Redis attached" warning but Redis plugin is connected
+
+Railway requires you to explicitly **reference** plugin variables on the app service.
+Go to Railway → your app service → **Variables** → click **+ Add variable reference** →
+select the Redis plugin. This links the `REDISHOST`, `REDISPORT`, etc. vars.
+
+### Home page shows loading spinner, no prices
+
+Redis is not connected or the backend crashed. Check backend logs first.
+Most common causes:
+1. Redis plugin not connected to the app service (see above)
+2. First deploy still running schema import (wait — it takes 10–15 min)
+3. KuCoin API keys added but incorrect — backend will log authentication errors
+
+### "Incorrect datetime value: 0000-00-00" in backend logs
+
+This is handled automatically by the boot script. If you see it after a redeploy:
+it means the boot script ran the sweep BUT the backend started before the sweep finished.
+Trigger another deploy — second run will be clean.
+
+### "JSON column 'tags' can't have default value"
+
+Also handled automatically by the boot script's schema fixup step. If it persists:
+open Railway → MySQL plugin → Data tab and run:
 ```sql
 SET GLOBAL sql_mode = '';
+ALTER TABLE support_ticket DROP INDEX IF EXISTS tags_idx;
+ALTER TABLE support_ticket MODIFY COLUMN tags JSON NULL;
 ```
-Then redeploy.
 
-### Frontend shows loading spinner forever
-Backend takes ~8 minutes cold. Wait and refresh. Check Railway deploy logs.
+### Binary options / futures prices not updating
 
-### Redis not connected
-Add the Redis plugin in Railway and redeploy.
+Check logs for "symbol not found" or "Bad symbol" errors. This means a delisted
+KuCoin symbol slipped through. All known symbols are handled by hotfixes 007–010,
+but KuCoin delists/renames symbols occasionally. Fix: add a hotfix SQL file to
+`scripts/sql/` that deactivates the offending row, then redeploy.
+
+### "License not activated" when enabling blockchains
+
+This is already patched in `backend/dist/`. If you see it, confirm the dist patches
+in `AGENT_HANDOFF.md` are present in the repo.
+
+### Fresh deploy: "DB has N tables (expected 160)"
+
+A previous import failed partway. Go to Railway → MySQL plugin → Data tab and run:
+```sql
+DROP DATABASE railway;
+CREATE DATABASE railway;
+```
+Then trigger a redeploy. The boot script will re-import cleanly.
 
 ---
 
-## Credential acquisition guide
+## Environment variable reference (full list)
 
-### Blockchain RPC nodes (for crypto deposits)
+These are all automatically defaulted. Only set them if you want to override:
 
-**Ethereum (ETH) / Polygon (MATIC) / Arbitrum (ARB) / Avalanche (AVAX)**
-- **Infura** (free): https://infura.io → Create project → copy HTTP endpoint
-  - Free tier: 100K requests/day — sufficient for a demo
-  - Set `ETH_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID`
-  - For Polygon: `MATIC_RPC_URL=https://polygon-mainnet.infura.io/v3/YOUR_PROJECT_ID`
-  - For Arbitrum: `ARB_RPC_URL=https://arbitrum-mainnet.infura.io/v3/YOUR_PROJECT_ID`
-  - For Avalanche: `AVAX_RPC_URL=https://avalanche-mainnet.infura.io/v3/YOUR_PROJECT_ID`
-- **Alchemy** (free alternative): https://alchemy.com → 300M compute units/month free
-- **Public RPCs** (no signup): use the values in the env block above — no key needed
+| Variable | Auto-default | Notes |
+|----------|-------------|-------|
+| `NODE_ENV` | `production` | |
+| `NEXT_PUBLIC_SITE_NAME` | `DeMourinho Crypto` | Change to your brand |
+| `NEXT_PUBLIC_DEFAULT_THEME` | `dark` | |
+| `NEXT_PUBLIC_DEFAULT_LANGUAGE` | `en` | |
+| `NEXT_PUBLIC_EXCHANGE` | `bin` | Frontend display flag only |
+| `JWT_EXPIRY` | `7d` | |
+| `JWT_REFRESH_EXPIRY` | `30d` | |
+| `RATE_LIMIT` | `100` | Requests per window |
+| `RATE_LIMIT_EXPIRY` | `15m` | Rate limit window |
+| `APP_ETH_RPC_URL` | Infura free public | Ethereum RPC |
+| `APP_BSC_RPC_URL` | Binance public | BSC RPC |
+| `APP_POLYGON_RPC_URL` | polygon-rpc.com | Polygon RPC |
+| `APP_SOL_RPC_URL` | mainnet-beta.solana.com | Solana RPC |
+| `TRON_MAINNET_RPC` | api.trongrid.io | Tron RPC |
+| `TRON_API_KEY` | Free key | TronGrid API |
+| `APP_OPENEXCHANGERATES_APP_ID` | Free key | FX rates |
+| `APP_ACCESS_TOKEN_SECRET` | **Auto-generated in DB** | JWT signing |
+| `APP_REFRESH_TOKEN_SECRET` | **Auto-generated in DB** | |
+| `APP_VERIFY_TOKEN_SECRET` | **Auto-generated in DB** | |
+| `APP_RESET_TOKEN_SECRET` | **Auto-generated in DB** | |
+| `ENCRYPTED_ENCRYPTION_KEY` | **Auto-generated in DB** | Wallet vault key |
+| `ENCRYPTION_KEY_PASSPHRASE` | **Auto-generated in DB** | Wallet vault passphrase |
 
-**Solana (SOL)**
-- Public: `SOL_RPC_URL=https://api.mainnet-beta.solana.com` — free, no key
-- Helius (100K free/month): https://helius.dev
+> The `APP_*_TOKEN_SECRET` and encryption key vars are generated on first boot and
+> stored in the `_deploy_secrets` MySQL table. They persist across redeploys automatically.
 
-**BNB Smart Chain (BNB)**
-- Public: `BNB_RPC_URL=https://bsc-dataseed.binance.org` — no key needed
+---
 
-**Tron (TRX) + USDT TRC-20**
-- TronGrid free API: https://www.trongrid.io → Create account → get API key
-- Set `TRON_RPC_URL=https://api.trongrid.io`
-- After setting the env var and redeploying: Admin → Wallets → Blockchains → enable TRON
-- Enable the USDT token under the TRON blockchain
-- Users will automatically get TRC-20 deposit addresses
+## Adding optional Cassandra (for on-chain ecosystem deposits)
 
-### USDT TRC-20 deposit flow
-1. Sign up at https://www.trongrid.io (free)
-2. Set `TRON_RPC_URL=https://api.trongrid.io` in Railway variables
-3. Redeploy
-4. Admin panel → Wallets → Blockchains → TRON → toggle On
-5. Admin panel → Wallets → Tokens → USDT → ensure TRC-20 is listed
-6. Users visiting Wallet → Deposit → USDT (TRC-20) will get a deposit address
+Cassandra enables a second deposit path: your platform generates its own on-chain
+wallet addresses for users (ETH, BSC, Tron, Solana, etc.) without using KuCoin at all.
+This is **optional** — the platform works fully without it.
 
-### Email (SMTP)
-- **Gmail**: Enable 2FA → App Passwords → generate one
-  - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER=you@gmail.com`, `SMTP_PASS=app_password`
-- **SendGrid** (100 emails/day free): https://sendgrid.com → API Keys → Create
-  - `SENDGRID_API_KEY=SG.xxxx`
-- **Mailgun** (100/day free trial): https://mailgun.com
+1. In your Railway project, click **+ New** → **Deploy from GitHub repo** → same repo
+2. Change the service's Dockerfile to `Dockerfile.cassandra`
+3. Set these vars on the **Cassandra service**:
+   ```env
+   CASSANDRA_CLUSTER_NAME=demourinho
+   CASSANDRA_DC=datacenter1
+   ```
+4. Set these vars on your **app service**:
+   ```env
+   SCYLLA_CONNECT_POINTS=<cassandra-service-name>.railway.internal:9042
+   SCYLLA_USERNAME=cassandra
+   SCYLLA_PASSWORD=cassandra
+   SCYLLA_KEYSPACE=trading
+   SCYLLA_FUTURES_KEYSPACE=futures
+   SCYLLA_DATACENTER=datacenter1
+   ```
+5. Cassandra takes 60–120s to fully start. The app retries for up to 5 minutes.
+6. Once connected: Admin → Ecosystem → Master Wallets → create one wallet per chain
 
-### Fiat payments
-- **Stripe**: https://stripe.com → Dashboard → Developers → API Keys
-  - Copy Publishable key + Secret key + create a Webhook (set to your domain + `/api/stripe/webhook`)
-- **PayPal**: https://developer.paypal.com → My Apps → Create App → copy Client ID + Secret
-
-### FX rates (for fiat currency display)
-- https://openexchangerates.org/signup/free — 1000 req/month free
-- Copy the App ID → `APP_OPENEXCHANGERATES_APP_ID=your_id`
-
-### ScyllaDB (ecosystem markets)
-- **ScyllaDB Cloud** (free trial): https://cloud.scylladb.com
-  - Create a cluster → get connection details → set `SCYLLA_HOSTS`, `SCYLLA_USERNAME`, `SCYLLA_PASSWORD`
-  - This enables the Ecosystem extension (on-chain spot markets with blockchain settlement)
-  - Without ScyllaDB, ecosystem markets are unavailable but all other trading works fine
-
-### AI features
-- **OpenAI**: https://platform.openai.com/api-keys → Create key
-- **Google Gemini**: https://aistudio.google.com/app/apikey → Create key
+**RAM warning**: Cassandra needs 500–800MB RAM minimum. On Railway free tier this can
+cause OOM crashes (container restarts with no log). The init script limits heap to 128M
+to help, but this is tight. Only add Cassandra if you have Railway credits to spare.
