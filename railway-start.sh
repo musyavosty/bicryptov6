@@ -57,20 +57,36 @@ fi
 export APP_FIAT_RATES_PROVIDER="${APP_FIAT_RATES_PROVIDER:-openexchangerates}"
 export APP_OPENEXCHANGERATES_APP_ID="${APP_OPENEXCHANGERATES_APP_ID:-988af4efe4054775a3c6e4030c95e1f5}"
 
-# -------- Build a runtime .env from the process env ---------
-# Railway already injects every variable into the process env, but Bicrypto's
-# config.js explicitly looks for a .env file, so we synthesize one. The regex
-# below is intentionally broad so new integrations don't need a code change.
-ENV_FILE="$(pwd)/.env"
-echo "Writing runtime .env from environment..."
-: > "$ENV_FILE"
-for v in $(env | awk -F= '{print $1}' | grep -E '^(DB_|NEXT_PUBLIC_|APP_|JWT_|RATE_LIMIT|REDIS_|SMTP_|SENDGRID_|MAILGUN_|GOOGLE_|FACEBOOK_|TWITTER_|GITHUB_|APPLE_|DISCORD_|STRIPE_|PAYPAL_|COINMARKETCAP_|OPENEXCHANGERATES_|VAPID_|TELEGRAM_|TWILIO_|PUSHER_|S3_|AWS_|CLOUDINARY_|IPFS_|PINATA_|BINANCE_|KUCOIN_|OKX_|BITFINEX_|HUOBI_|KRAKEN_|COINBASE_|BYBIT_|MEXC_|GATE_|BITGET_|BITMART_|XT_|CRYPTOCOM_|BACKEND_|NODE_ENV|PORT|SITE_URL|TZ)'); do
-  val="${!v}"
-  val_esc="${val//\"/\\\"}"
-  printf '%s="%s"\n' "$v" "$val_esc" >> "$ENV_FILE"
-done
-cp -f "$ENV_FILE" backend/.env || true
-cp -f "$ENV_FILE" frontend/.env || true
+# Blockchain RPC defaults — free public endpoints, no key required
+export APP_ETH_RPC_URL="${APP_ETH_RPC_URL:-https://mainnet.infura.io/v3/34af3cce68c745be9b20e698872291d4}"
+export APP_BSC_RPC_URL="${APP_BSC_RPC_URL:-https://bsc-dataseed.binance.org/}"
+export APP_POLYGON_RPC_URL="${APP_POLYGON_RPC_URL:-https://polygon-rpc.com/}"
+export APP_SOL_RPC_URL="${APP_SOL_RPC_URL:-https://api.mainnet-beta.solana.com}"
+export TRON_MAINNET_RPC="${TRON_MAINNET_RPC:-https://api.trongrid.io}"
+export TRON_API_KEY="${TRON_API_KEY:-6b13dabf-eefe-4ce1-8520-51748984af39}"
+
+# JWT expiry defaults
+export JWT_EXPIRY="${JWT_EXPIRY:-7d}"
+export JWT_REFRESH_EXPIRY="${JWT_REFRESH_EXPIRY:-30d}"
+export JWT_RESET_EXPIRY="${JWT_RESET_EXPIRY:-1h}"
+export RATE_LIMIT="${RATE_LIMIT:-100}"
+export RATE_LIMIT_EXPIRY="${RATE_LIMIT_EXPIRY:-15m}"
+
+# App identity defaults
+export NODE_ENV="${NODE_ENV:-production}"
+export NEXT_PUBLIC_SITE_NAME="${NEXT_PUBLIC_SITE_NAME:-DeMourinho Crypto}"
+export NEXT_PUBLIC_DEFAULT_THEME="${NEXT_PUBLIC_DEFAULT_THEME:-dark}"
+export NEXT_PUBLIC_DEFAULT_LANGUAGE="${NEXT_PUBLIC_DEFAULT_LANGUAGE:-en}"
+export NEXT_PUBLIC_EXCHANGE="${NEXT_PUBLIC_EXCHANGE:-bin}"
+export APP_CLIENT_PLATFORM="${APP_CLIENT_PLATFORM:-web}"
+export NEXT_PUBLIC_DEMO_STATUS="${NEXT_PUBLIC_DEMO_STATUS:-false}"
+
+# Auto-detect Railway public URL if NEXT_PUBLIC_FRONTEND is not manually set
+if [ -z "$NEXT_PUBLIC_FRONTEND" ] && [ -n "$RAILWAY_PUBLIC_DOMAIN" ]; then
+  export NEXT_PUBLIC_FRONTEND="https://${RAILWAY_PUBLIC_DOMAIN}"
+  export APP_FRONTEND="${APP_FRONTEND:-https://${RAILWAY_PUBLIC_DOMAIN}}"
+  echo "Auto-detected frontend URL: https://${RAILWAY_PUBLIC_DOMAIN}"
+fi
 
 # -------- Wait for MySQL --------
 echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
@@ -90,6 +106,30 @@ until node -e "
   sleep 2
 done
 echo "MySQL is reachable."
+
+# -------- Auto-generate + persist secrets (first boot) / load from DB (every boot) --------
+# Generates APP_*_TOKEN_SECRET, ENCRYPTED_ENCRYPTION_KEY, ENCRYPTION_KEY_PASSPHRASE
+# on first boot and stores them in MySQL so they survive redeploys without any manual
+# env var setup. On subsequent boots, reads the same values back from DB.
+# Env vars always win if they are already set (Railway Variables tab).
+echo "Loading application secrets (auto-generating on first boot if needed)..."
+eval "$(node scripts/auto-secrets.js 2>/tmp/auto-secrets.err)" || true
+cat /tmp/auto-secrets.err >&2 || true
+
+# -------- Build a runtime .env from the process env ---------
+# Runs AFTER auto-secrets so generated secrets are included.
+# Railway already injects every variable into the process env, but Bicrypto's
+# config.js explicitly looks for a .env file, so we synthesize one.
+ENV_FILE="$(pwd)/.env"
+echo "Writing runtime .env from environment..."
+: > "$ENV_FILE"
+for v in $(env | awk -F= '{print $1}' | grep -E '^(DB_|NEXT_PUBLIC_|APP_|JWT_|RATE_LIMIT|REDIS_|SMTP_|SENDGRID_|MAILGUN_|GOOGLE_|FACEBOOK_|TWITTER_|GITHUB_|APPLE_|DISCORD_|STRIPE_|PAYPAL_|COINMARKETCAP_|OPENEXCHANGERATES_|VAPID_|TELEGRAM_|TWILIO_|PUSHER_|S3_|AWS_|CLOUDINARY_|IPFS_|PINATA_|BINANCE_|KUCOIN_|OKX_|BITFINEX_|HUOBI_|KRAKEN_|COINBASE_|BYBIT_|MEXC_|GATE_|BITGET_|BITMART_|XT_|CRYPTOCOM_|BACKEND_|ENCRYPTED_|ENCRYPTION_|NODE_ENV|PORT|SITE_URL|TZ)'); do
+  val="${!v}"
+  val_esc="${val//\"/\\\"}"
+  printf '%s="%s"\n' "$v" "$val_esc" >> "$ENV_FILE"
+done
+cp -f "$ENV_FILE" backend/.env || true
+cp -f "$ENV_FILE" frontend/.env || true
 
 # -------- Relax server-wide sql_mode --------
 # Bicrypto's compiled backend defines several Sequelize models with TEXT/BLOB
