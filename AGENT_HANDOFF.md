@@ -232,6 +232,21 @@ zero keys (admin approves manually).
 
 ---
 
+## Root cause: hotfix-010 order-of-operations bug (fixed)
+
+On a **fresh deploy**, hotfix-010 ran before the data sweeps — so when it tried to
+`UPDATE exchange_market SET status=0 WHERE currency='SOL' AND pair='BTC'` there were
+no rows yet (empty DB). The sweeps then inserted SOL/BTC, ETH/BTC, LINK/ETH with
+`status=1`, leaving the cron broken.
+
+**Fix applied (2026-07-24)**:
+- `scripts/sql/sweep-forward.sql` lines 100–102: changed SOL/BTC, ETH/BTC, LINK/ETH
+  INSERT status from `1` → `0`. Fresh deploys no longer activate these pairs.
+- hotfix-010 remains for existing deploys where the rows may pre-exist with status=1.
+- Live Railway DB patched directly (UPDATE applied via sakura.proxy.rlwy.net).
+
+---
+
 ## Recommended next steps (in priority order)
 
 1. **Get KuCoin API keys first** — takes 10 minutes, free, no KYC required, unlocks
